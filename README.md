@@ -19,7 +19,6 @@ IT_PIC: original particle-in-cell (PIC)
 IT_FLIP: FLIP scheme
 IT_RPIC: rotational particle-in-cell (RPIC)
 IT_APIC: affine particle-in-cell (APIC)
-IT_AFLIP: affine version of FLIP
 ```
 
 Dependencies

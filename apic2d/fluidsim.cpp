@@ -29,13 +29,19 @@
 
 #include "openglutils.h"
 
-// Change here to try differnt integration scheme, options:
+// Change here to try different integration scheme, options:
 // IT_PIC: original particle-in-cell (PIC)
 // IT_FLIP: FLIP scheme
 // IT_RPIC: rotational particle-in-cell (RPIC)
 // IT_APIC: affine particle-in-cell (APIC)
-// IT_AFLIP: affine version of FLIP
 const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_APIC;
+
+// Change here to try different order for velocity evaluation from grid, options:
+// IO_EULER: first order evaluation
+// IO_RA2: Ralston's second order evaluation
+// IO_RK3: Runge Kutta's 3rd-order method
+// IO_RK4: Runge Kutta's 4rd-order method
+const FluidSim::INTEGRATOR_ORDER integration_order = FluidSim::IO_EULER;
 
 // 'theta' in Brackbill's paper
 const scalar lagrangian_ratio = 0.97f;
@@ -244,27 +250,22 @@ void FluidSim::advance(scalar dt) {
   switch (integration_scheme) {
     case IT_PIC:
       // PIC is a specific case of a more general (Affine) FLIP scheme
-      map_g2p_aflip_general(dt, 0.0, 0.0, 0.0, 0.0);
+      map_g2p_flip_general(dt, 0.0, 0.0, 0.0, 0.0);
       break;
 
     case IT_FLIP:
       // FLIP scheme
-      map_g2p_aflip_general(dt, lagrangian_ratio, 0.0, 0.0, 0.0);
+      map_g2p_flip_general(dt, lagrangian_ratio, 0.0, 0.0, 0.0);
       break;
 
     case IT_RPIC:
       // RPIC is a specific case of a more general Affine FLIP scheme
-      map_g2p_aflip_general(dt, 0.0, 0.0, 0.0, 1.0);
+      map_g2p_flip_general(dt, 0.0, 0.0, 0.0, 1.0);
       break;
 
     case IT_APIC:
       // APIC is a specific case of a more general Affine FLIP scheme
-      map_g2p_aflip_general(dt, 0.0, 0.0, 1.0, 1.0);
-      break;
-
-    case IT_AFLIP:
-      // Affine FLIP scheme modified from the FLIP scheme
-      map_g2p_aflip_general(dt, lagrangian_ratio, 0.0, 1.0, 1.0);
+      map_g2p_flip_general(dt, 0.0, 0.0, 1.0, 1.0);
       break;
 
     default:
@@ -446,6 +447,56 @@ void FluidSim::project(scalar dt) {
 
   // Set up and solve the variational pressure solve.
   solve_pressure(dt);
+}
+
+Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
+    const Vector2s& position, scalar dt, FluidSim::INTEGRATOR_ORDER order,
+    Matrix2s* affine_matrix) {
+  switch (order) {
+    case FluidSim::IO_EULER:
+      if (affine_matrix) {
+        *affine_matrix = get_affine_matrix(position);
+      }
+      return get_velocity(position);
+    case FluidSim::IO_RA2: {
+      Vector2s v0 = get_velocity(position);
+      Vector2s v1 = get_velocity(position + v0 * 2.0 / 3.0 * dt);
+      if (affine_matrix) {
+        Matrix2s a0 = get_affine_matrix(position);
+        Matrix2s a1 = get_affine_matrix(position + v0 * 2.0 / 3.0 * dt);
+        *affine_matrix = a0 * 0.25 + a1 * 0.75;      
+      }
+      return v0 * 0.25 + v1 * 0.75;
+    }
+    case FluidSim::IO_RK3: {
+      Vector2s v0 = get_velocity(position);
+      Vector2s v1 = get_velocity(position + v0 * 0.5 * dt);
+      Vector2s v2 = get_velocity(position + (v1 * 2.0 - v0) * dt);
+      if (affine_matrix) {
+        Matrix2s a0 = get_affine_matrix(position);
+        Matrix2s a1 = get_affine_matrix(position + v0 * 0.5 * dt);
+        Matrix2s a2 = get_affine_matrix(position + (v1 * 2.0 - v0) * dt);
+        *affine_matrix = a0 / 6.0 + a1 * (2.0 / 3.0) + a2 / 6.0;
+      }
+      return v0 / 6.0 + v1 * (2.0 / 3.0) + v2 / 6.0;
+    }
+    case FluidSim::IO_RK4: {
+      Vector2s v0 = get_velocity(position);
+      Vector2s v1 = get_velocity(position + v0 * 0.5 * dt);
+      Vector2s v2 = get_velocity(position + v1 * 0.5 * dt);
+      Vector2s v3 = get_velocity(position + v2 * dt);
+      if (affine_matrix) {
+        Matrix2s a0 = get_affine_matrix(position);
+        Matrix2s a1 = get_affine_matrix(position + v0 * 0.5 * dt);
+        Matrix2s a2 = get_affine_matrix(position + v1 * 0.5 * dt);
+        Matrix2s a3 = get_affine_matrix(position + v2 * dt);
+        *affine_matrix = a0 / 6.0 + a1 / 3.0 + a2 / 3.0 + a3 / 6.0;
+      }
+      return v0 / 6.0 + v1 / 3.0 + v2 / 3.0 + v3 / 6.0;
+    }
+    default:
+      return Vector2s::Zero();
+  }
 }
 
 // Interpolate velocity from the MAC grid.
@@ -745,21 +796,25 @@ void FluidSim::map_p2g() {
  \brief  A general affine FLIP scheme that unifies all the other AFLIP schemes
          used in this code
  */
-void FluidSim::map_g2p_aflip_general(float dt, const scalar lagrangian_ratio,
+void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
                                      const scalar lagrangian_symplecticity,
                                      const scalar affine_stretching_ratio,
                                      const scalar affine_rotational_ratio) {
+  bool use_affine =
+      affine_stretching_ratio > 0. || affine_rotational_ratio > 0.;
   for (Particle& p : particles) {
     if (p.type == PT_SOLID) continue;
 
-    Vector2s next_grid_velocity = get_velocity(p.x);
-    Vector2s original_grid_velocity = get_saved_velocity(p.x);
+    Matrix2s C = Matrix2s::Zero();
+    Vector2s next_grid_velocity = get_velocity_and_affine_matrix_with_order(
+        p.x, dt, integration_order, use_affine ? (&C) : nullptr);
+    Vector2s original_grid_velocity =
+        get_saved_velocity(p.x);
     Vector2s lagrangian_velocity = p.v;
 
     p.v = next_grid_velocity +
           (lagrangian_velocity - original_grid_velocity) * lagrangian_ratio;
 
-    Matrix2s C = get_affine_matrix(p.x);
     p.c = C * (affine_stretching_ratio + affine_rotational_ratio) * 0.5 +
           C.transpose() * (affine_stretching_ratio - affine_rotational_ratio) *
               0.5;
@@ -896,7 +951,7 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
 
   old_valid = valid;
 
-  for (int layers = 0; layers < 1; ++layers) {
+  for (int layers = 0; layers < 4; ++layers) {
     Array2s* pgrid_source = pgrids[layers & 1];
     Array2s* pgrid_target = pgrids[!(layers & 1)];
 

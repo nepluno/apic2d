@@ -54,9 +54,17 @@ class FluidSim {
     IT_FLIP,
     IT_RPIC,
     IT_APIC,
-    IT_AFLIP,
 
     IT_COUNT
+  };
+
+  enum INTEGRATOR_ORDER {
+    IO_EULER,
+    IO_RA2,
+    IO_RK3,
+    IO_RK4,
+
+    IO_COUNT
   };
 
   enum BOUNDARY_TYPE {
@@ -137,6 +145,9 @@ class FluidSim {
   std::vector<double> rhs;
   std::vector<double> pressure;
 
+  Vector2s get_velocity_and_affine_matrix_with_order(
+      const Vector2s& position, scalar dt, FluidSim::INTEGRATOR_ORDER order,
+      Matrix2s* affine_matrix);
   Vector2s get_velocity(const Vector2s& position);
   Matrix2s get_affine_matrix(const Vector2s& position);
 
@@ -148,7 +159,7 @@ class FluidSim {
   void map_p2g();
 
   /*! FLIP schemes */
-  void map_g2p_aflip_general(float dt, const scalar lagrangian_ratio,
+  void map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
                              const scalar lagrangian_symplecticity,
                              const scalar affine_stretching_ratio,
                              const scalar affine_rotational_ratio);
