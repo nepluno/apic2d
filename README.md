@@ -21,6 +21,14 @@ IT_RPIC: rotational particle-in-cell (RPIC)
 IT_APIC: affine particle-in-cell (APIC)
 ```
 
+It also supports using different orders for velocity evaluation, where one may change the `velocity_order` variable in the code. Its value can be one of the following:
+```
+VO_EULER: first order evaluation
+VO_RA2: Ralston's second order evaluation
+VO_RK3: Runge Kutta's 3rd-order method
+VO_RK4: Runge Kutta's 4rd-order method
+```
+
 Dependencies
 --------------------
 APIC2D depends on the Eigen libraries (included) as well as GLUT for simple visualization.

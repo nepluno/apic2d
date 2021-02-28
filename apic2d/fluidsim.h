@@ -58,13 +58,13 @@ class FluidSim {
     IT_COUNT
   };
 
-  enum INTEGRATOR_ORDER {
-    IO_EULER,
-    IO_RA2,
-    IO_RK3,
-    IO_RK4,
+  enum VELOCITY_ORDER {
+    VO_EULER,
+    VO_RA2,
+    VO_RK3,
+    VO_RK4,
 
-    IO_COUNT
+    VO_COUNT
   };
 
   enum BOUNDARY_TYPE {
@@ -146,7 +146,7 @@ class FluidSim {
   std::vector<double> pressure;
 
   Vector2s get_velocity_and_affine_matrix_with_order(
-      const Vector2s& position, scalar dt, FluidSim::INTEGRATOR_ORDER order,
+      const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER order,
       Matrix2s* affine_matrix);
   Vector2s get_velocity(const Vector2s& position);
   Matrix2s get_affine_matrix(const Vector2s& position);

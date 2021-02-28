@@ -37,11 +37,11 @@
 const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_APIC;
 
 // Change here to try different order for velocity evaluation from grid, options:
-// IO_EULER: first order evaluation
-// IO_RA2: Ralston's second order evaluation
-// IO_RK3: Runge Kutta's 3rd-order method
-// IO_RK4: Runge Kutta's 4rd-order method
-const FluidSim::INTEGRATOR_ORDER integration_order = FluidSim::IO_EULER;
+// VO_EULER: first order evaluation
+// VO_RA2: Ralston's second order evaluation
+// VO_RK3: Runge Kutta's 3rd-order method
+// VO_RK4: Runge Kutta's 4rd-order method
+const FluidSim::VELOCITY_ORDER velocity_order = FluidSim::VO_EULER;
 
 // 'theta' in Brackbill's paper
 const scalar lagrangian_ratio = 0.97f;
@@ -450,15 +450,15 @@ void FluidSim::project(scalar dt) {
 }
 
 Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
-    const Vector2s& position, scalar dt, FluidSim::INTEGRATOR_ORDER order,
+    const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER order,
     Matrix2s* affine_matrix) {
   switch (order) {
-    case FluidSim::IO_EULER:
+    case FluidSim::VO_EULER:
       if (affine_matrix) {
         *affine_matrix = get_affine_matrix(position);
       }
       return get_velocity(position);
-    case FluidSim::IO_RA2: {
+    case FluidSim::VO_RA2: {
       Vector2s v0 = get_velocity(position);
       Vector2s v1 = get_velocity(position + v0 * 2.0 / 3.0 * dt);
       if (affine_matrix) {
@@ -468,7 +468,7 @@ Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
       }
       return v0 * 0.25 + v1 * 0.75;
     }
-    case FluidSim::IO_RK3: {
+    case FluidSim::VO_RK3: {
       Vector2s v0 = get_velocity(position);
       Vector2s v1 = get_velocity(position + v0 * 0.5 * dt);
       Vector2s v2 = get_velocity(position + (v1 * 2.0 - v0) * dt);
@@ -480,7 +480,7 @@ Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
       }
       return v0 / 6.0 + v1 * (2.0 / 3.0) + v2 / 6.0;
     }
-    case FluidSim::IO_RK4: {
+    case FluidSim::VO_RK4: {
       Vector2s v0 = get_velocity(position);
       Vector2s v1 = get_velocity(position + v0 * 0.5 * dt);
       Vector2s v2 = get_velocity(position + v1 * 0.5 * dt);
@@ -793,7 +793,7 @@ void FluidSim::map_p2g() {
 }
 
 /*!
- \brief  A general affine FLIP scheme that unifies all the other AFLIP schemes
+ \brief  A general affine FLIP scheme that unifies all the other FLIP schemes
          used in this code
  */
 void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
@@ -807,7 +807,7 @@ void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
 
     Matrix2s C = Matrix2s::Zero();
     Vector2s next_grid_velocity = get_velocity_and_affine_matrix_with_order(
-        p.x, dt, integration_order, use_affine ? (&C) : nullptr);
+        p.x, dt, velocity_order, use_affine ? (&C) : nullptr);
     Vector2s original_grid_velocity =
         get_saved_velocity(p.x);
     Vector2s lagrangian_velocity = p.v;
