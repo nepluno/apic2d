@@ -40,6 +40,7 @@ struct Particle {
 
   scalar radii;
   scalar dens;
+  scalar logJ;
   ParticleType type;
 };
 
@@ -54,6 +55,8 @@ class FluidSim {
     IT_FLIP,
     IT_RPIC,
     IT_APIC,
+    IT_AFLIP,
+    IT_ASFLIP,
 
     IT_COUNT
   };
@@ -111,7 +114,6 @@ class FluidSim {
 
   /*! Boundaries */
   Boundary* root_boundary;
-  Boundary* root_sources;
 
   /*! Grid Origin */
   Vector2s origin;

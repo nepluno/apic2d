@@ -13,12 +13,16 @@ Ando, Ryoichi, Nils Thurey, and Reiji Tsuruno. "Preserving fluid sheets with ada
 
 Brackbill, Jeremiah U., and Hans M. Ruppel. "FLIP: A method for adaptively zoned, particle-in-cell calculations of fluid flows in two dimensions." Journal of Computational physics 65.2 (1986): 314-343.
 
+Fei, Yun (Raymond), et al. "Revisiting Integration in the Material Point Method: A Scheme for Easier Separation and Less Dissipation." ACM Transactions on Graphics (TOG) 40.4 (2021): 109.
+
 It contains multiple integrators that you may switch and compare through changing the `integration_scheme` variable in the code. Its value can be one of the following:
 ```
 IT_PIC: original particle-in-cell (PIC)
-IT_FLIP: FLIP scheme
+IT_FLIP: original fluid-implicit-particle (FLIP)
 IT_RPIC: rotational particle-in-cell (RPIC)
 IT_APIC: affine particle-in-cell (APIC)
+IT_AFLIP: affine fluid-implicit-particle (AFLIP)
+IT_ASFLIP: affine separable fluid-implicit-particle (ASFLIP)
 ```
 
 It also supports using different orders for velocity evaluation, where one may change the `velocity_order` variable in the code. Its value can be one of the following:

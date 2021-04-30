@@ -31,22 +31,25 @@
 
 // Change here to try different integration scheme, options:
 // IT_PIC: original particle-in-cell (PIC)
-// IT_FLIP: FLIP scheme
+// IT_FLIP: original fluid-implicit-particle (FLIP)
 // IT_RPIC: rotational particle-in-cell (RPIC)
 // IT_APIC: affine particle-in-cell (APIC)
+// IT_AFLIP: affine fluid-implicit-particle (AFLIP)
+// IT_ASFLIP: affine separable fluid-implicit-particle (ASFLIP)
 const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_APIC;
 
-// Change here to try different order for velocity evaluation from grid, options:
-// VO_EULER: first order evaluation
-// VO_RA2: Ralston's second order evaluation
-// VO_RK3: Runge Kutta's 3rd-order method
-// VO_RK4: Runge Kutta's 4rd-order method
+// Change here to try different order for velocity evaluation from grid,
+// options: VO_EULER: first order evaluation VO_RA2: Ralston's second order
+// evaluation VO_RK3: Runge Kutta's 3rd-order method VO_RK4: Runge Kutta's
+// 4rd-order method
 const FluidSim::VELOCITY_ORDER velocity_order = FluidSim::VO_EULER;
 
-// 'theta' in Brackbill's paper
 const scalar lagrangian_ratio = 0.97f;
-const scalar source_velocity = 40.0;
 const int particle_correction_step = 1;
+
+// whether collision is resolved with another pass on each particle (instead of
+// grid)
+const bool use_particle_boundary_collisions = false;
 
 scalar fraction_inside(scalar phi_left, scalar phi_right);
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
@@ -268,12 +271,22 @@ void FluidSim::advance(scalar dt) {
       map_g2p_flip_general(dt, 0.0, 0.0, 1.0, 1.0);
       break;
 
+    case IT_AFLIP:
+      // APIC is a specific case of a more general Affine FLIP scheme
+      map_g2p_flip_general(dt, lagrangian_ratio, 0.0, 1.0, 1.0);
+      break;
+
+    case IT_ASFLIP:
+      // APIC is a specific case of a more general Affine FLIP scheme
+      map_g2p_flip_general(dt, lagrangian_ratio, 1.0, 1.0, 1.0);
+      break;
+
     default:
       std::cerr << "Unknown integrator type!" << std::endl;
       break;
   }
 
-  particle_boundary_collision(dt);
+  if (use_particle_boundary_collisions) particle_boundary_collision(dt);
 }
 
 void FluidSim::save_velocity() {
@@ -283,15 +296,12 @@ void FluidSim::save_velocity() {
 
 void FluidSim::add_force(scalar dt) {
   // splat particles
-  for (int j = 0; j < nj + 1; ++j)
+  for (int j = 0; j < nj + 1; ++j) {
     for (int i = 0; i < ni; ++i) {
       v(i, j) += -981.0 * dt;
       Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
-
-      if (root_sources && compute_phi(pos, *root_sources) < dx) {
-        v(i, j) = -source_velocity;
-      }
     }
+  }
 }
 
 // For extrapolated points, replace the normal component
@@ -403,31 +413,6 @@ void FluidSim::particle_boundary_collision(scalar dt) {
 
   m_sorter->sort(this);
 
-  if (root_sources) {
-    for (int j = 0; j < nj; ++j)
-      for (int i = 0; i < ni; ++i) {
-        int num_p_need = 2 - std::min(2, m_sorter->getNumParticleAt(i, j));
-        for (int k = 0; k < num_p_need; ++k) {
-          scalar x = ((scalar)i + 0.5 +
-                      (((scalar)rand() / (scalar)RAND_MAX) * 0.5 - 0.5)) *
-                     dx;
-          scalar y = ((scalar)j + 0.5 +
-                      (((scalar)rand() / (scalar)RAND_MAX) * 0.5 - 0.5)) *
-                     dx;
-          Vector2s pt = Vector2s(x, y) + origin;
-
-          if (compute_phi(pt, *root_sources) < 0.0) {
-            Vector2s pp = (pt - origin) / dx;
-            scalar phi_value = interpolate_value(pp, nodal_solid_phi);
-            if (phi_value > 0.0) {
-              add_particle(Particle(pt, Vector2s(0.0, -source_velocity),
-                                    dx / sqrt(2.0), PT_LIQUID));
-            }
-          }
-        }
-      }
-  }
-
   particles.erase(
       std::remove_if(particles.begin(), particles.end(),
                      [&](const Particle& p) {
@@ -464,7 +449,7 @@ Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
       if (affine_matrix) {
         Matrix2s a0 = get_affine_matrix(position);
         Matrix2s a1 = get_affine_matrix(position + v0 * 2.0 / 3.0 * dt);
-        *affine_matrix = a0 * 0.25 + a1 * 0.75;      
+        *affine_matrix = a0 * 0.25 + a1 * 0.75;
       }
       return v0 * 0.25 + v1 * 0.75;
     }
@@ -797,9 +782,9 @@ void FluidSim::map_p2g() {
          used in this code
  */
 void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
-                                     const scalar lagrangian_symplecticity,
-                                     const scalar affine_stretching_ratio,
-                                     const scalar affine_rotational_ratio) {
+                                    const scalar lagrangian_symplecticity,
+                                    const scalar affine_stretching_ratio,
+                                    const scalar affine_rotational_ratio) {
   bool use_affine =
       affine_stretching_ratio > 0. || affine_rotational_ratio > 0.;
   for (Particle& p : particles) {
@@ -808,8 +793,7 @@ void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
     Matrix2s C = Matrix2s::Zero();
     Vector2s next_grid_velocity = get_velocity_and_affine_matrix_with_order(
         p.x, dt, velocity_order, use_affine ? (&C) : nullptr);
-    Vector2s original_grid_velocity =
-        get_saved_velocity(p.x);
+    Vector2s original_grid_velocity = get_saved_velocity(p.x);
     Vector2s lagrangian_velocity = p.v;
 
     p.v = next_grid_velocity +
@@ -818,10 +802,32 @@ void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
     p.c = C * (affine_stretching_ratio + affine_rotational_ratio) * 0.5 +
           C.transpose() * (affine_stretching_ratio - affine_rotational_ratio) *
               0.5;
-    p.x += (next_grid_velocity +
-            (lagrangian_velocity - original_grid_velocity) * lagrangian_ratio *
-                lagrangian_symplecticity) *
-           dt;
+
+    if (lagrangian_symplecticity > 0.0) {
+      scalar logdJ = C.trace() * dt;
+      p.logJ += logdJ;
+      scalar pos_adj = lagrangian_symplecticity;
+      Vector2s pp = (p.x - origin) / dx;
+      scalar phi_value = interpolate_value(pp, nodal_solid_phi);
+      if (phi_value < 0) {
+        Vector2s normal;
+        interpolate_gradient(normal, pp, nodal_solid_phi);
+        normal.normalize();
+        float dotnv = -normal.dot(lagrangian_velocity);
+        if (dotnv > 0.0) {
+          pos_adj = 0.0;
+        }
+      }
+      if (p.logJ < -0.001) {
+        pos_adj = 0.0;
+      }
+      p.x += (next_grid_velocity +
+              (lagrangian_velocity - original_grid_velocity) *
+                  lagrangian_ratio * lagrangian_symplecticity) *
+             dt;
+    } else {
+      p.x += next_grid_velocity * dt;    
+    }
   }
 }
 
@@ -910,7 +916,7 @@ FluidSim::Boundary::Boundary(Boundary* op0_, Boundary* op1_,
 
 Particle::Particle(const Vector2s& x_, const Vector2s& v_, const scalar& radii_,
                    ParticleType type_)
-    : x(x_), v(v_), radii(radii_), dens(0), type(type_) {
+    : x(x_), v(v_), radii(radii_), dens(0), logJ(0), type(type_) {
   c.setZero();
   buf0.setZero();
 }
@@ -920,13 +926,14 @@ Particle::Particle()
       v(Vector2s::Zero()),
       radii(0.0),
       dens(0),
+      logJ(0.0),
       type(PT_LIQUID) {
   c.setZero();
   buf0.setZero();
 }
 
 Particle::Particle(const Particle& p)
-    : x(p.x), v(p.v), radii(p.radii), dens(0), type(p.type) {
+    : x(p.x), v(p.v), radii(p.radii), dens(0), logJ(0.0), type(p.type) {
   c.setZero();
   buf0.setZero();
 }

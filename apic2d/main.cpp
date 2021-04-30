@@ -69,8 +69,6 @@ int main(int argc, char **argv) {
   sim.root_boundary = new FluidSim::Boundary(c0, Vector2s(rad0, 0.0),
                                              FluidSim::BT_CIRCLE, true);
 
-  sim.root_sources = NULL;
-
   sim.update_boundary();
   sim.init_random_particles();
 
