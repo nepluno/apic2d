@@ -35,12 +35,12 @@ void sorter::sort(FluidSim* sim) {
     }
 
   // Store Into The Cells
-  const int np = (int)sim->particles.size();
+  const int np = (int)sim->particles_.size();
   for (int n = 0; n < np; n++) {
-    Particle* p = &sim->particles[n];
+    Particle* p = &sim->particles_[n];
 
-    int pi = (int)((p->x(0) - sim->origin(0)) / sim->dx);
-    int pj = (int)((p->x(1) - sim->origin(1)) / sim->dx);
+    int pi = (int)((p->x_(0) - sim->origin_(0)) / sim->dx_);
+    int pj = (int)((p->x_(1) - sim->origin_(1)) / sim->dx_);
     int i = max(0, min(ni - 1, pi));
     int j = max(0, min(nj - 1, pj));
     cells[j * ni + i].push_back(p);

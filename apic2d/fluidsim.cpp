@@ -39,17 +39,17 @@
 const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_APIC;
 
 // Change here to try different order for velocity evaluation from grid,
-// options: 
-// VO_EULER: first order evaluation 
+// options:
+// VO_EULER: first order evaluation
 // VO_RA2: Ralston's second order
-//         evaluation 
-// VO_RK3: Runge Kutta's 3rd-order method 
+//         evaluation
+// VO_RK3: Runge Kutta's 3rd-order method
 // VO_RK4: Runge Kutta's
 //         4rd-order method
 const FluidSim::VELOCITY_ORDER velocity_order = FluidSim::VO_EULER;
 
 // Change here to try different order for interpolation
-// options: 
+// options:
 // IO_LINEAR: linear interpolation
 // IO_QUADRATIC: quadratic interpolation
 const FluidSim::INTERPOLATION_ORDER interpolation_order = FluidSim::IO_LINEAR;
@@ -63,57 +63,56 @@ const bool use_particle_boundary_collisions = false;
 
 scalar fraction_inside(scalar phi_left, scalar phi_right);
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
-                 const Array2s& grid_liquid_weight, Array2c& valid,
-                 Array2c old_valid, const Vector2i& offset);
+                 const Array2s& grid_liquid_weight, Array2c& valid_,
+                 Array2c old_valid_, const Vector2i& offset);
 
 scalar FluidSim::cfl() {
   scalar maxvel = 0;
-  for (int i = 0; i < u.a.size(); ++i) maxvel = fmax(maxvel, fabs(u.a[i]));
-  for (int i = 0; i < v.a.size(); ++i) maxvel = fmax(maxvel, fabs(v.a[i]));
-  return dx / maxvel;
+  for (int i = 0; i < u_.a.size(); ++i) maxvel = fmax(maxvel, fabs(u_.a[i]));
+  for (int i = 0; i < v_.a.size(); ++i) maxvel = fmax(maxvel, fabs(v_.a[i]));
+  return dx_ / maxvel;
 }
 
-FluidSim::~FluidSim() { delete m_sorter; }
+FluidSim::~FluidSim() { delete m_sorter_; }
 
-void FluidSim::initialize(const Vector2s& origin_, scalar width, int ni_,
-                          int nj_, scalar rho_, bool draw_grid_,
-                          bool draw_particles_, bool draw_velocities_,
-                          bool draw_boundaries_) {
-  rho = rho_;
-  draw_grid = draw_grid_;
-  draw_particles = draw_particles_;
-  draw_velocities = draw_velocities_;
-  draw_boundaries = draw_boundaries_;
-  origin = origin_;
-  ni = ni_;
-  nj = nj_;
-  dx = width / (scalar)ni;
-  u.resize(ni + 1, nj);
-  temp_u.resize(ni + 1, nj);
-  u_weights.resize(ni + 1, nj);
-  u_valid.resize(ni + 1, nj);
-  saved_u.resize(ni + 1, nj);
-  v.resize(ni, nj + 1);
-  temp_v.resize(ni, nj + 1);
-  v_weights.resize(ni, nj + 1);
-  v_valid.resize(ni, nj + 1);
-  saved_v.resize(ni, nj + 1);
-  u.set_zero();
-  v.set_zero();
-  nodal_solid_phi.resize(ni + 1, nj + 1);
-  valid.resize(ni + 1, nj + 1);
-  old_valid.resize(ni + 1, nj + 1);
-  liquid_phi.resize(ni, nj);
-  m_sorter = new sorter(ni, nj);
+void FluidSim::initialize(const Vector2s& origin, scalar width, int ni, int nj,
+                          scalar rho, bool draw_grid, bool draw_particles,
+                          bool draw_velocities, bool draw_boundaries) {
+  rho_ = rho;
+  draw_grid_ = draw_grid;
+  draw_particles_ = draw_particles;
+  draw_velocities_ = draw_velocities;
+  draw_boundaries_ = draw_boundaries;
+  origin_ = origin;
+  ni_ = ni;
+  nj_ = nj;
+  dx_ = width / static_cast<scalar>(ni_);
+  u_.resize(ni_ + 1, nj_);
+  temp_u_.resize(ni_ + 1, nj_);
+  u_weights_.resize(ni_ + 1, nj_);
+  u_valid_.resize(ni_ + 1, nj_);
+  saved_u_.resize(ni_ + 1, nj_);
+  v_.resize(ni_, nj_ + 1);
+  temp_v_.resize(ni_, nj_ + 1);
+  v_weights_.resize(ni_, nj_ + 1);
+  v_valid_.resize(ni_, nj_ + 1);
+  saved_v_.resize(ni_, nj_ + 1);
+  u_.set_zero();
+  v_.set_zero();
+  nodal_solid_phi_.resize(ni_ + 1, nj_ + 1);
+  valid_.resize(ni_ + 1, nj_ + 1);
+  old_valid_.resize(ni_ + 1, nj_ + 1);
+  liquid_phi_.resize(ni_, nj_);
+  m_sorter_ = new sorter(ni_, nj_);
 }
 
 // Initialize the grid-based signed distance field that dictates the position of
 // the solid boundary
 void FluidSim::update_boundary() {
-  for (int j = 0; j < nj + 1; ++j)
-    for (int i = 0; i < ni + 1; ++i) {
-      Vector2s pos(i * dx, j * dx);
-      nodal_solid_phi(i, j) = compute_phi(pos + origin);
+  for (int j = 0; j < nj_ + 1; ++j)
+    for (int i = 0; i < ni_ + 1; ++i) {
+      Vector2s pos(i * dx_, j * dx_);
+      nodal_solid_phi_(i, j) = compute_phi(pos + origin_);
     }
 }
 
@@ -125,19 +124,21 @@ void FluidSim::resample(Vector2s& p, Vector2s& u, Matrix2s& c) {
   u = Vector2s::Zero();
   c = Matrix2s::Zero();
 
-  int ix = std::max(0, std::min(ni - 1, (int)((p(0) - origin(0)) / dx)));
-  int iy = std::max(0, std::min(nj - 1, (int)((p(1) - origin(1)) / dx)));
+  int ix = std::max(
+      0, std::min(ni_ - 1, static_cast<int>((p(0) - origin_(0)) / dx_)));
+  int iy = std::max(
+      0, std::min(nj_ - 1, static_cast<int>((p(1) - origin_(1)) / dx_)));
 
-  m_sorter->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, neighbors);
+  m_sorter_->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, neighbors);
 
-  const scalar re = dx;
+  const scalar re = dx_;
 
   for (Particle* np : neighbors) {
-    Vector2s diff = np->x - p;
-    scalar w = 4.0 / 3.0 * M_PI * np->radii * np->radii * np->radii * rho *
+    Vector2s diff = np->x_ - p;
+    scalar w = 4.0 / 3.0 * M_PI * np->radii_ * np->radii_ * np->radii_ * rho_ *
                kernel::linear_kernel(diff, re);
-    u += w * np->v;
-    c += w * np->c;
+    u += w * np->v_;
+    c += w * np->c_;
     wsum += w;
   }
 
@@ -151,57 +152,61 @@ void FluidSim::resample(Vector2s& p, Vector2s& u, Matrix2s& c) {
 }
 
 void FluidSim::compute_density() {
-  int np = (int)particles.size();
+  int np = static_cast<int>(particles_.size());
 
-  const scalar re = dx;
+  const scalar re = dx_;
   // Compute Pseudo Moved Point
   for (int n = 0; n < np; ++n) {
-    Particle& p = particles[n];
-    scalar dens = 0.0;
+    Particle& p = particles_[n];
+    scalar dens_ = 0.0;
 
-    int ix = std::max(0, std::min((int)((p.x(0) - origin(0)) / dx), ni));
-    int iy = std::max(0, std::min((int)((p.x(1) - origin(1)) / dx), nj));
+    int ix = std::max(
+        0, std::min(static_cast<int>((p.x_(0) - origin_(0)) / dx_), ni_));
+    int iy = std::max(
+        0, std::min(static_cast<int>((p.x_(1) - origin_(1)) / dx_), nj_));
 
     std::vector<Particle*> neighbors;
-    m_sorter->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, neighbors);
+    m_sorter_->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, neighbors);
 
     for (Particle* np : neighbors) {
-      scalar dist = (p.x - np->x).norm();
+      scalar dist = (p.x_ - np->x_).norm();
       scalar w = kernel::poly6_kernel(dist * dist, re);
-      dens += w;
+      dens_ += w;
     }
 
-    p.dens = dens;
+    p.dens_ = dens_;
   }
 }
 
 void FluidSim::correct(scalar dt) {
-  int np = (int)particles.size();
+  int np = static_cast<int>(particles_.size());
 
-  const scalar re = dx / sqrt(2.0) * 1.1;
+  const scalar re = dx_ / sqrt(2.0) * 1.1;
 
   int offset = rand() % particle_correction_step;
   // Compute Pseudo Moved Point
   for (int n = 0; n < np; ++n) {
     if (n % particle_correction_step != offset) continue;
 
-    Particle& p = particles[n];
+    Particle& p = particles_[n];
 
-    if (p.type != PT_LIQUID) continue;
+    if (p.type_ != PT_LIQUID) continue;
     Vector2s spring = Vector2s::Zero();
 
-    int ix = std::max(0, std::min((int)((p.x(0) - origin(0)) / dx), ni));
-    int iy = std::max(0, std::min((int)((p.x(1) - origin(1)) / dx), nj));
+    int ix = std::max(
+        0, std::min(static_cast<int>((p.x_(0) - origin_(0)) / dx_), ni_));
+    int iy = std::max(
+        0, std::min(static_cast<int>((p.x_(1) - origin_(1)) / dx_), nj_));
 
     std::vector<Particle*> neighbors;
-    m_sorter->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, neighbors);
+    m_sorter_->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, neighbors);
 
     for (Particle* np : neighbors) {
       if (&p != np) {
-        scalar dist = (p.x - np->x).norm();
+        scalar dist = (p.x_ - np->x_).norm();
         scalar w = 50.0 * kernel::smooth_kernel(dist * dist, re);
         if (dist > 0.01 * re) {
-          spring += w * (p.x - np->x) / dist * re;
+          spring += w * (p.x_ - np->x_) / dist * re;
         } else {
           spring(0) += 0.01 * re / dt * (rand() & 0xFF) / 255.0;
           spring(1) += 0.01 * re / dt * (rand() & 0xFF) / 255.0;
@@ -209,33 +214,33 @@ void FluidSim::correct(scalar dt) {
       }
     }
 
-    p.buf0 = p.x + dt * spring;
+    p.buf0_ = p.x_ + dt * spring;
 
-    Vector2s pp = (p.buf0 - origin) / dx;
-    scalar phi_value = interpolate_value(pp, nodal_solid_phi);
+    Vector2s pp = (p.buf0_ - origin_) / dx_;
+    scalar phi_value = interpolate_value(pp, nodal_solid_phi_);
 
     if (phi_value < 0) {
       Vector2s normal;
-      interpolate_gradient(normal, pp, nodal_solid_phi);
+      interpolate_gradient(normal, pp, nodal_solid_phi_);
       normal.normalize();
-      p.buf0 -= phi_value * normal;
+      p.buf0_ -= phi_value * normal;
     }
   }
 
   // Update
   for (int n = 0; n < np; ++n) {
     if (n % particle_correction_step != offset) continue;
-    Particle& p = particles[n];
-    if (p.type != PT_LIQUID) continue;
+    Particle& p = particles_[n];
+    if (p.type_ != PT_LIQUID) continue;
 
-    p.x = p.buf0;
+    p.x_ = p.buf0_;
   }
 }
 
 // The main fluid simulation step
 void FluidSim::advance(scalar dt) {
-  // Passively advect particles
-  m_sorter->sort(this);
+  // Passively advect particles_
+  m_sorter_->sort(this);
 
   map_p2g();
   save_velocity();
@@ -243,15 +248,15 @@ void FluidSim::advance(scalar dt) {
   add_force(dt);
   project(dt);
 
-  temp_u = u;
-  temp_v = v;
-  // Pressure projection only produces valid velocities in faces with non-zero
+  temp_u_ = u_;
+  temp_v_ = v_;
+  // Pressure projection only produces valid_ velocities in faces with non-zero
   // associated face area. Because the advection step may interpolate from these
   // invalid faces, we must extrapolate velocities from the fluid domain into
   // these zero-area faces.
-  extrapolate(u, temp_u, u_weights, liquid_phi, valid, old_valid,
+  extrapolate(u_, temp_u_, u_weights_, liquid_phi_, valid_, old_valid_,
               Vector2i(-1, 0));
-  extrapolate(v, temp_v, v_weights, liquid_phi, valid, old_valid,
+  extrapolate(v_, temp_v_, v_weights_, liquid_phi_, valid_, old_valid_,
               Vector2i(0, -1));
 
   // For extrapolated velocities, replace the normal component with
@@ -292,7 +297,7 @@ void FluidSim::advance(scalar dt) {
       break;
 
     default:
-      std::cerr << "Unknown integrator type!" << std::endl;
+      std::cerr << "Unknown integrator type_!" << std::endl;
       break;
   }
 
@@ -300,16 +305,16 @@ void FluidSim::advance(scalar dt) {
 }
 
 void FluidSim::save_velocity() {
-  saved_u = u;
-  saved_v = v;
+  saved_u_ = u_;
+  saved_v_ = v_;
 }
 
 void FluidSim::add_force(scalar dt) {
-  // splat particles
-  for (int j = 0; j < nj + 1; ++j) {
-    for (int i = 0; i < ni; ++i) {
-      v(i, j) += -981.0 * dt;
-      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+  // splat particles_
+  for (int j = 0; j < nj_ + 1; ++j) {
+    for (int i = 0; i < ni_; ++i) {
+      v_(i, j) += -981.0 * dt;
+      Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
     }
   }
 }
@@ -317,127 +322,130 @@ void FluidSim::add_force(scalar dt) {
 // For extrapolated points, replace the normal component
 // of velocity with the object velocity (in this case zero).
 void FluidSim::constrain_velocity() {
-  temp_u = u;
-  temp_v = v;
+  temp_u_ = u_;
+  temp_v_ = v_;
 
   //(At lower grid resolutions, the normal estimate from the signed
   // distance function is poor, so it doesn't work quite as well.
   // An exact normal would do better.)
 
-  // constrain u
-  for (int j = 0; j < u.nj; ++j)
-    for (int i = 0; i < u.ni; ++i) {
-      if (u_weights(i, j) == 0) {
+  // constrain u_
+  for (int j = 0; j < u_.nj; ++j)
+    for (int i = 0; i < u_.ni; ++i) {
+      if (u_weights_(i, j) == 0) {
         // apply constraint
-        Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
+        Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
         Vector2s vel = get_velocity(pos);
         Vector2s normal(0, 0);
-        interpolate_gradient(normal, Vector2s(i, j + 0.5), nodal_solid_phi);
+        interpolate_gradient(normal, Vector2s(i, j + 0.5), nodal_solid_phi_);
         normal.normalize();
         scalar perp_component = vel.dot(normal);
         vel -= perp_component * normal;
-        temp_u(i, j) = vel[0];
+        temp_u_(i, j) = vel[0];
       }
     }
 
-  // constrain v
-  for (int j = 0; j < v.nj; ++j)
-    for (int i = 0; i < v.ni; ++i) {
-      if (v_weights(i, j) == 0) {
+  // constrain v_
+  for (int j = 0; j < v_.nj; ++j)
+    for (int i = 0; i < v_.ni; ++i) {
+      if (v_weights_(i, j) == 0) {
         // apply constraint
-        Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+        Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
         Vector2s vel = get_velocity(pos);
         Vector2s normal(0, 0);
-        interpolate_gradient(normal, Vector2s(i + 0.5, j), nodal_solid_phi);
+        interpolate_gradient(normal, Vector2s(i + 0.5, j), nodal_solid_phi_);
         normal.normalize();
         scalar perp_component = vel.dot(normal);
         vel -= perp_component * normal;
-        temp_v(i, j) = vel[1];
+        temp_v_(i, j) = vel[1];
       }
     }
 
   // update
-  u = temp_u;
-  v = temp_v;
+  u_ = temp_u_;
+  v_ = temp_v_;
 }
 
 void FluidSim::compute_phi() {
-  // Estimate from particles
-  liquid_phi.assign(3 * dx);
-  for (int p = 0; p < particles.size(); ++p) {
-    if (particles[p].type != PT_LIQUID) continue;
+  // Estimate from particles_
+  liquid_phi_.assign(3 * dx_);
+  for (int p = 0; p < particles_.size(); ++p) {
+    if (particles_[p].type_ != PT_LIQUID) continue;
 
-    const Vector2s& point = particles[p].x;
+    const Vector2s& point = particles_[p].x_;
     int i, j;
     scalar fx, fy;
     // determine containing cell;
-    get_barycentric((point[0]) / dx - 0.5, i, fx, 0, ni);
-    get_barycentric((point[1]) / dx - 0.5, j, fy, 0, nj);
+    get_barycentric((point[0]) / dx_ - 0.5, i, fx, 0, ni_);
+    get_barycentric((point[1]) / dx_ - 0.5, j, fy, 0, nj_);
 
     // compute distance to surrounding few points, keep if it's the minimum
     for (int j_off = j - 2; j_off <= j + 2; ++j_off)
       for (int i_off = i - 2; i_off <= i + 2; ++i_off) {
-        if (i_off < 0 || i_off >= ni || j_off < 0 || j_off >= nj) continue;
+        if (i_off < 0 || i_off >= ni_ || j_off < 0 || j_off >= nj_) continue;
 
         Vector2s pos =
-            Vector2s((i_off + 0.5) * dx, (j_off + 0.5) * dx) + origin;
+            Vector2s((i_off + 0.5) * dx_, (j_off + 0.5) * dx_) + origin_;
         scalar phi_temp = (pos - point).norm() -
-                          std::max(particles[p].radii, dx * sqrt(2.0) / 2.0);
-        liquid_phi(i_off, j_off) = min(liquid_phi(i_off, j_off), phi_temp);
+                          std::max(particles_[p].radii_, dx_ * sqrt(2.0) / 2.0);
+        liquid_phi_(i_off, j_off) = min(liquid_phi_(i_off, j_off), phi_temp);
       }
   }
 
   //"extrapolate" phi into solids if nearby
-  for (int j = 0; j < nj; ++j) {
-    for (int i = 0; i < ni; ++i) {
-      Vector2s pos = Vector2s((i + 0.5) * dx, (j + 0.5) * dx) + origin;
+  for (int j = 0; j < nj_; ++j) {
+    for (int i = 0; i < ni_; ++i) {
+      Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
       scalar solid_phi_val = compute_phi(pos);
-      liquid_phi(i, j) = std::min(liquid_phi(i, j), solid_phi_val);
+      liquid_phi_(i, j) = std::min(liquid_phi_(i, j), solid_phi_val);
     }
   }
 }
 
 // Add a tracer particle for visualization
-void FluidSim::add_particle(const Particle& p) { particles.push_back(p); }
+void FluidSim::add_particle(const Particle& p) { particles_.push_back(p); }
 
-// move the particles in the fluid
+// move the particles_ in the fluid
 void FluidSim::particle_boundary_collision(scalar dt) {
-  for (int p = 0; p < particles.size(); ++p) {
-    if (particles[p].type == PT_SOLID) continue;
+  for (int p = 0; p < particles_.size(); ++p) {
+    if (particles_[p].type_ == PT_SOLID) continue;
 
-    Vector2s pp = (particles[p].x - origin) / dx;
+    Vector2s pp = (particles_[p].x_ - origin_) / dx_;
 
     // Particles can still occasionally leave the domain due to truncation
     // errors, interpolation error, or large timesteps, so we project them back
     // in for good measure.
 
     // Try commenting this section out to see the degree of accumulated error.
-    scalar phi_value = interpolate_value(pp, nodal_solid_phi);
+    scalar phi_value = interpolate_value(pp, nodal_solid_phi_);
     if (phi_value < 0) {
       Vector2s normal;
-      interpolate_gradient(normal, pp, nodal_solid_phi);
+      interpolate_gradient(normal, pp, nodal_solid_phi_);
       normal.normalize();
-      particles[p].x -= phi_value * normal;
+      particles_[p].x_ -= phi_value * normal;
     }
   }
 
-  m_sorter->sort(this);
+  m_sorter_->sort(this);
 
-  particles.erase(
-      std::remove_if(particles.begin(), particles.end(),
-                     [&](const Particle& p) {
-                       return p.x(0) < origin(0) - 0.5 * dx ||
-                              p.x(0) > origin(0) + ((scalar)ni + 1.5) * dx ||
-                              p.x(1) < origin(1) - 0.5 * dx ||
-                              p.x(1) > origin(1) + ((scalar)nj + 1.5) * dx;
-                     }),
-      particles.end());
+  particles_.erase(
+      std::remove_if(
+          particles_.begin(), particles_.end(),
+          [&](const Particle& p) {
+            return p.x_(0) < origin_(0) - 0.5 * dx_ ||
+                   p.x_(0) >
+                       origin_(0) + (static_cast<scalar>(ni_) + 1.5) * dx_ ||
+                   p.x_(1) < origin_(1) - 0.5 * dx_ ||
+                   p.x_(1) >
+                       origin_(1) + (static_cast<scalar>(nj_) + 1.5) * dx_;
+          }),
+      particles_.end());
 }
 
 void FluidSim::project(scalar dt) {
   compute_phi();
 
-  // Compute finite-volume type face area weight for each velocity sample.
+  // Compute finite-volume type_ face area weight for each velocity sample.
   compute_weights();
 
   // Set up and solve the variational pressure solve.
@@ -447,7 +455,7 @@ void FluidSim::project(scalar dt) {
 Vector2s FluidSim::get_velocity_quadratic_impl(const Vector2s& position,
                                                const Array2s& uu,
                                                const Array2s& vv) {
-  Vector2s p = (position - origin) / dx;
+  Vector2s p = (position - origin_) / dx_;
   Vector2s p0 = p - Vector2s(0, 0.5);
   Vector2s p1 = p - Vector2s(0.5, 0);
 
@@ -455,11 +463,11 @@ Vector2s FluidSim::get_velocity_quadratic_impl(const Vector2s& position,
   Vector2i ip0 = Vector2i(static_cast<int>(p0(0)), static_cast<int>(p0(1)));
   for (int i = ip0(0) - 1; i <= ip0(0) + 2; ++i) {
     for (int j = ip0(1) - 1; j <= ip0(1) + 2; ++j) {
-      if (i < 0 || i > ni || j < 0 || j >= nj) {
+      if (i < 0 || i > ni_ || j < 0 || j >= nj_) {
         continue;
       }
-      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
-      scalar w = kernel::quadratic_kernel(position - pos, dx);
+      Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
+      scalar w = kernel::quadratic_kernel(position - pos, dx_);
       ret(0) += uu(i, j) * w;
     }
   }
@@ -467,11 +475,11 @@ Vector2s FluidSim::get_velocity_quadratic_impl(const Vector2s& position,
   Vector2i ip1 = Vector2i(static_cast<int>(p1(0)), static_cast<int>(p1(1)));
   for (int i = ip1(0) - 1; i <= ip1(0) + 2; ++i) {
     for (int j = ip1(1) - 1; j <= ip1(1) + 2; ++j) {
-      if (i < 0 || i >= ni || j < 0 || j > nj) {
+      if (i < 0 || i >= ni_ || j < 0 || j > nj_) {
         continue;
       }
-      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
-      scalar w = kernel::quadratic_kernel(position - pos, dx);
+      Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
+      scalar w = kernel::quadratic_kernel(position - pos, dx_);
       ret(1) += vv(i, j) * w;
     }
   }
@@ -480,35 +488,35 @@ Vector2s FluidSim::get_velocity_quadratic_impl(const Vector2s& position,
 }
 
 Matrix2s FluidSim::get_affine_matrix_quadratic_impl(const Vector2s& position,
-    const Array2s& uu,
-    const Array2s& vv) {
-  Vector2s p = (position - origin) / dx;
+                                                    const Array2s& uu,
+                                                    const Array2s& vv) {
+  Vector2s p = (position - origin_) / dx_;
   Vector2s p0 = p - Vector2s(0, 0.5);
   Vector2s p1 = p - Vector2s(0.5, 0);
 
   Matrix2s ret = Matrix2s::Zero();
-  scalar invD = 4.0 / (dx * dx);
+  scalar invD = 4.0 / (dx_ * dx_);
   Vector2i ip0 = Vector2i(static_cast<int>(p0(0)), static_cast<int>(p0(1)));
   for (int i = ip0(0) - 1; i <= ip0(0) + 2; ++i) {
     for (int j = ip0(1) - 1; j <= ip0(1) + 2; ++j) {
-      if (i < 0 || i > ni || j < 0 || j >= nj) {
+      if (i < 0 || i > ni_ || j < 0 || j >= nj_) {
         continue;
       }
-      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
-      scalar w = kernel::quadratic_kernel(position - pos, dx);
-      ret.block<2, 1>(0, 0) += u(i, j) * w * (position - pos) * invD;
+      Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
+      scalar w = kernel::quadratic_kernel(position - pos, dx_);
+      ret.block<2, 1>(0, 0) += u_(i, j) * w * (position - pos) * invD;
     }
   }
 
   Vector2i ip1 = Vector2i(static_cast<int>(p1(0)), static_cast<int>(p1(1)));
   for (int i = ip1(0) - 1; i <= ip1(0) + 2; ++i) {
     for (int j = ip1(1) - 1; j <= ip1(1) + 2; ++j) {
-      if (i < 0 || i >= ni || j < 0 || j > nj) {
+      if (i < 0 || i >= ni_ || j < 0 || j > nj_) {
         continue;
       }
-      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
-      scalar w = kernel::quadratic_kernel(position - pos, dx);
-      ret.block<2, 1>(0, 1) += v(i, j) * w * (position - pos) * invD;
+      Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
+      scalar w = kernel::quadratic_kernel(position - pos, dx_);
+      ret.block<2, 1>(0, 1) += v_(i, j) * w * (position - pos) * invD;
     }
   }
 
@@ -516,19 +524,19 @@ Matrix2s FluidSim::get_affine_matrix_quadratic_impl(const Vector2s& position,
 }
 
 Vector2s FluidSim::get_velocity_quadratic(const Vector2s& position) {
-  return get_velocity_quadratic_impl(position, u, v);
+  return get_velocity_quadratic_impl(position, u_, v_);
 }
 
 Matrix2s FluidSim::get_affine_matrix_quadratic(const Vector2s& position) {
-  return get_affine_matrix_quadratic_impl(position, u, v);
+  return get_affine_matrix_quadratic_impl(position, u_, v_);
 }
 
 Vector2s FluidSim::get_saved_velocity_quadratic(const Vector2s& position) {
-  return get_velocity_quadratic_impl(position, saved_u, saved_v);
+  return get_velocity_quadratic_impl(position, saved_u_, saved_v_);
 }
 
 Matrix2s FluidSim::get_saved_affine_matrix_quadratic(const Vector2s& position) {
-  return get_affine_matrix_quadratic_impl(position, saved_u, saved_v);
+  return get_affine_matrix_quadratic_impl(position, saved_u_, saved_v_);
 }
 
 Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
@@ -592,47 +600,47 @@ Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
 
 // Interpolate velocity from the MAC grid.
 Vector2s FluidSim::get_velocity(const Vector2s& position) {
-  // Interpolate the velocity from the u and v grids
-  Vector2s p = (position - origin) / dx;
+  // Interpolate the velocity from the u_ and v_ grids
+  Vector2s p = (position - origin_) / dx_;
   Vector2s p0 = p - Vector2s(0, 0.5);
   Vector2s p1 = p - Vector2s(0.5, 0);
-  scalar u_value = interpolate_value(p0, u);
-  scalar v_value = interpolate_value(p1, v);
+  scalar u_value = interpolate_value(p0, u_);
+  scalar v_value = interpolate_value(p1, v_);
 
   return Vector2s(u_value, v_value);
 }
 
 Matrix2s FluidSim::get_affine_matrix(const Vector2s& position) {
-  Vector2s p = (position - origin) / dx;
+  Vector2s p = (position - origin_) / dx_;
   Vector2s p0 = p - Vector2s(0, 0.5);
   Vector2s p1 = p - Vector2s(0.5, 0);
 
-  Matrix2s c;
-  c.col(0) = affine_interpolate_value(p0, u) / dx;
-  c.col(1) = affine_interpolate_value(p1, v) / dx;
+  Matrix2s c_;
+  c_.col(0) = affine_interpolate_value(p0, u_) / dx_;
+  c_.col(1) = affine_interpolate_value(p1, v_) / dx_;
 
-  return c;
+  return c_;
 }
 
 Matrix2s FluidSim::get_saved_affine_matrix(const Vector2s& position) {
-  Vector2s p = (position - origin) / dx;
+  Vector2s p = (position - origin_) / dx_;
   Vector2s p0 = p - Vector2s(0, 0.5);
   Vector2s p1 = p - Vector2s(0.5, 0);
 
-  Matrix2s c;
-  c.col(0) = affine_interpolate_value(p0, saved_u);
-  c.col(1) = affine_interpolate_value(p1, saved_v);
+  Matrix2s c_;
+  c_.col(0) = affine_interpolate_value(p0, saved_u_);
+  c_.col(1) = affine_interpolate_value(p1, saved_v_);
 
-  return c;
+  return c_;
 }
 
 Vector2s FluidSim::get_saved_velocity(const Vector2s& position) {
-  // Interpolate the velocity from the u and v grids
-  Vector2s p = (position - origin) / dx;
+  // Interpolate the velocity from the u_ and v_ grids
+  Vector2s p = (position - origin_) / dx_;
   Vector2s p0 = p - Vector2s(0, 0.5);
   Vector2s p1 = p - Vector2s(0.5, 0);
-  scalar u_value = interpolate_value(p0, saved_u);
-  scalar v_value = interpolate_value(p1, saved_v);
+  scalar u_value = interpolate_value(p0, saved_u_);
+  scalar v_value = interpolate_value(p1, saved_v_);
 
   return Vector2s(u_value, v_value);
 }
@@ -657,17 +665,17 @@ scalar fraction_inside(scalar phi_left, scalar phi_right) {
 // Compute finite-volume style face-weights for fluid from nodal signed
 // distances
 void FluidSim::compute_weights() {
-  for (int j = 0; j < u_weights.nj; ++j)
-    for (int i = 0; i < u_weights.ni; ++i) {
-      u_weights(i, j) =
-          1 - fraction_inside(nodal_solid_phi(i, j + 1), nodal_solid_phi(i, j));
-      u_weights(i, j) = clamp(u_weights(i, j), 0.0, 1.0);
+  for (int j = 0; j < u_weights_.nj; ++j)
+    for (int i = 0; i < u_weights_.ni; ++i) {
+      u_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i, j + 1),
+                                             nodal_solid_phi_(i, j));
+      u_weights_(i, j) = clamp(u_weights_(i, j), 0.0, 1.0);
     }
-  for (int j = 0; j < v_weights.nj; ++j)
-    for (int i = 0; i < v_weights.ni; ++i) {
-      v_weights(i, j) =
-          1 - fraction_inside(nodal_solid_phi(i + 1, j), nodal_solid_phi(i, j));
-      v_weights(i, j) = clamp(v_weights(i, j), 0.0, 1.0);
+  for (int j = 0; j < v_weights_.nj; ++j)
+    for (int i = 0; i < v_weights_.ni; ++i) {
+      v_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i + 1, j),
+                                             nodal_solid_phi_(i, j));
+      v_weights_(i, j) = clamp(v_weights_(i, j), 0.0, 1.0);
     }
 }
 
@@ -676,78 +684,75 @@ void FluidSim::compute_weights() {
 void FluidSim::solve_pressure(scalar dt) {
   // This linear system could be simplified, but I've left it as is for clarity
   // and consistency with the standard naive discretization
-
-  int ni = v.ni;
-  int nj = u.nj;
-  int system_size = ni * nj;
-  if (rhs.size() != system_size) {
-    rhs.resize(system_size);
-    pressure.resize(system_size);
-    matrix.resize(system_size);
+  int system_size = ni_ * nj_;
+  if (rhs_.size() != system_size) {
+    rhs_.resize(system_size);
+    pressure_.resize(system_size);
+    matrix_.resize(system_size);
   }
-  matrix.zero();
+  matrix_.zero();
 
   // Build the linear system for pressure
-  for (int j = 1; j < nj - 1; ++j) {
-    for (int i = 1; i < ni - 1; ++i) {
-      int index = i + ni * j;
-      rhs[index] = 0;
-      pressure[index] = 0;
-      float centre_phi = liquid_phi(i, j);
+  for (int j = 1; j < nj_ - 1; ++j) {
+    for (int i = 1; i < ni_ - 1; ++i) {
+      int index = i + ni_ * j;
+      rhs_[index] = 0;
+      pressure_[index] = 0;
+      float centre_phi = liquid_phi_(i, j);
       if (centre_phi < 0 &&
-          (u_weights(i, j) > 0.0 || u_weights(i + 1, j) > 0.0 ||
-           v_weights(i, j) > 0.0 || v_weights(i, j + 1) > 0.0)) {
+          (u_weights_(i, j) > 0.0 || u_weights_(i + 1, j) > 0.0 ||
+           v_weights_(i, j) > 0.0 || v_weights_(i, j + 1) > 0.0)) {
         // right neighbour
-        float term = u_weights(i + 1, j) * dt / sqr(dx);
-        float right_phi = liquid_phi(i + 1, j);
+        float term = u_weights_(i + 1, j) * dt / sqr(dx_);
+        float right_phi = liquid_phi_(i + 1, j);
         if (right_phi < 0) {
-          matrix.add_to_element(index, index, term);
-          matrix.add_to_element(index, index + 1, -term);
+          matrix_.add_to_element(index, index, term);
+          matrix_.add_to_element(index, index + 1, -term);
         } else {
           float theta = fraction_inside(centre_phi, right_phi);
           if (theta < 0.01) theta = 0.01;
-          matrix.add_to_element(index, index, term / theta);
+          matrix_.add_to_element(index, index, term / theta);
         }
-        rhs[index] -= u_weights(i + 1, j) * u(i + 1, j) / dx;
+        rhs_[index] -= u_weights_(i + 1, j) * u_(i + 1, j) / dx_;
 
         // left neighbour
-        term = u_weights(i, j) * dt / sqr(dx);
-        float left_phi = liquid_phi(i - 1, j);
+        term = u_weights_(i, j) * dt / sqr(dx_);
+        float left_phi = liquid_phi_(i - 1, j);
         if (left_phi < 0) {
-          matrix.add_to_element(index, index, term);
-          matrix.add_to_element(index, index - 1, -term);
+          matrix_.add_to_element(index, index, term);
+          matrix_.add_to_element(index, index - 1, -term);
         } else {
           float theta = fraction_inside(centre_phi, left_phi);
           if (theta < 0.01) theta = 0.01;
-          matrix.add_to_element(index, index, term / theta);
+          matrix_.add_to_element(index, index, term / theta);
         }
-        rhs[index] += u_weights(i, j) * u(i, j) / dx;
+        rhs_[index] += u_weights_(i, j) * u_(i, j) / dx_;
 
         // top neighbour
-        term = v_weights(i, j + 1) * dt / sqr(dx);
-        float top_phi = liquid_phi(i, j + 1);
+        term = v_weights_(i, j + 1) * dt / sqr(dx_);
+        float top_phi = liquid_phi_(i, j + 1);
         if (top_phi < 0) {
-          matrix.add_to_element(index, index, term);
-          matrix.add_to_element(index, index + ni, -term);
+          matrix_.add_to_element(index, index, term);
+          matrix_.add_to_element(index, index + ni_, -term);
         } else {
           float theta = fraction_inside(centre_phi, top_phi);
           if (theta < 0.01) theta = 0.01;
-          matrix.add_to_element(index, index, term / theta);
+          matrix_.add_to_element(index, index, term / theta);
         }
-        rhs[index] -= v_weights(i, j + 1) * v(i, j + 1) / dx;
+        rhs_[index] -= v_weights_(i, j + 1) * v_(i, j + 1) / dx_;
 
         // bottom neighbour
-        term = v_weights(i, j) * dt / sqr(dx);
-        float bot_phi = liquid_phi(i, j - 1);
+        term = v_weights_(i, j) * dt / sqr(dx_);
+        float bot_phi = liquid_phi_(i, j - 1);
         if (bot_phi < 0) {
-          matrix.add_to_element(index, index, term);
-          matrix.add_to_element(index, index - ni, -term);
+          matrix_.add_to_element(index, index, term);
+          matrix_.add_to_element(index, index - ni_, -term);
         } else {
           float theta = fraction_inside(centre_phi, bot_phi);
           if (theta < 0.01) theta = 0.01;
-          matrix.add_to_element(index, index, term / theta);
+          matrix_.add_to_element(index, index, term / theta);
         }
-        rhs[index] += v_weights(i, j) * v(i, j) / dx;
+        rhs_[index] += v_weights_(i, j) * v_(i, j) / dx_;
       }
     }
   }
@@ -756,7 +761,7 @@ void FluidSim::solve_pressure(scalar dt) {
 
   scalar tolerance;
   int iterations;
-  bool success = solver.solve(matrix, rhs, pressure, tolerance, iterations);
+  bool success = solver_.solve(matrix_, rhs_, pressure_, tolerance, iterations);
   if (!success) {
     printf(
         "WARNING: Pressure solve "
@@ -764,86 +769,95 @@ void FluidSim::solve_pressure(scalar dt) {
   }
 
   // Apply the velocity update
-  u_valid.assign(0);
-  for (int j = 0; j < u.nj; ++j)
-    for (int i = 1; i < u.ni - 1; ++i) {
-      int index = i + j * ni;
-      if (u_weights(i, j) > 0) {
-        if (liquid_phi(i, j) < 0 || liquid_phi(i - 1, j) < 0) {
+  u_valid_.assign(0);
+  for (int j = 0; j < u_.nj; ++j)
+    for (int i = 1; i < u_.ni - 1; ++i) {
+      int index = i + j * ni_;
+      if (u_weights_(i, j) > 0) {
+        if (liquid_phi_(i, j) < 0 || liquid_phi_(i - 1, j) < 0) {
           float theta = 1;
-          if (liquid_phi(i, j) >= 0 || liquid_phi(i - 1, j) >= 0)
-            theta = fraction_inside(liquid_phi(i - 1, j), liquid_phi(i, j));
+          if (liquid_phi_(i, j) >= 0 || liquid_phi_(i - 1, j) >= 0)
+            theta = fraction_inside(liquid_phi_(i - 1, j), liquid_phi_(i, j));
           if (theta < 0.01) theta = 0.01;
-          u(i, j) -= dt * (pressure[index] - pressure[index - 1]) / dx / theta;
-          u_valid(i, j) = 1;
+          u_(i, j) -=
+              dt * (pressure_[index] - pressure_[index - 1]) / dx_ / theta;
+          u_valid_(i, j) = 1;
         }
       } else
-        u(i, j) = 0;
+        u_(i, j) = 0;
     }
-  v_valid.assign(0);
-  for (int j = 1; j < v.nj - 1; ++j)
-    for (int i = 0; i < v.ni; ++i) {
-      int index = i + j * ni;
-      if (v_weights(i, j) > 0) {
-        if (liquid_phi(i, j) < 0 || liquid_phi(i, j - 1) < 0) {
+  v_valid_.assign(0);
+  for (int j = 1; j < v_.nj - 1; ++j)
+    for (int i = 0; i < v_.ni; ++i) {
+      int index = i + j * ni_;
+      if (v_weights_(i, j) > 0) {
+        if (liquid_phi_(i, j) < 0 || liquid_phi_(i, j - 1) < 0) {
           float theta = 1;
-          if (liquid_phi(i, j) >= 0 || liquid_phi(i, j - 1) >= 0)
-            theta = fraction_inside(liquid_phi(i, j - 1), liquid_phi(i, j));
+          if (liquid_phi_(i, j) >= 0 || liquid_phi_(i, j - 1) >= 0)
+            theta = fraction_inside(liquid_phi_(i, j - 1), liquid_phi_(i, j));
           if (theta < 0.01) theta = 0.01;
-          v(i, j) -= dt * (pressure[index] - pressure[index - ni]) / dx / theta;
-          v_valid(i, j) = 1;
+          v_(i, j) -=
+              dt * (pressure_[index] - pressure_[index - ni_]) / dx_ / theta;
+          v_valid_(i, j) = 1;
         }
       } else
-        v(i, j) = 0;
+        v_(i, j) = 0;
     }
 }
 
 scalar FluidSim::compute_phi(const Vector2s& pos, const Boundary& b) const {
-  switch (b.type) {
+  switch (b.type_) {
     case BT_BOX:
-      return b.sign * box_phi(pos, b.center, b.parameter);
+      return b.sign_ * box_phi(pos, b.center_, b.parameter_);
     case BT_CIRCLE:
-      return b.sign * circle_phi(pos, b.center, b.parameter(0));
+      return b.sign_ * circle_phi(pos, b.center_, b.parameter_(0));
     case BT_TORUS:
-      return b.sign * torus_phi(pos, b.center, b.parameter(0), b.parameter(1));
+      return b.sign_ *
+             torus_phi(pos, b.center_, b.parameter_(0), b.parameter_(1));
     case BT_TRIANGLE:
-      return b.sign * triangle_phi(pos, b.center, b.parameter(0));
+      return b.sign_ * triangle_phi(pos, b.center_, b.parameter_(0));
     case BT_HEXAGON:
-      return b.sign * hexagon_phi(pos, b.center, b.parameter(0));
+      return b.sign_ * hexagon_phi(pos, b.center_, b.parameter_(0));
     case BT_CYLINDER:
-      return b.sign *
-             cylinder_phi(pos, b.center, b.parameter(0), b.parameter(1));
+      return b.sign_ *
+             cylinder_phi(pos, b.center_, b.parameter_(0), b.parameter_(1));
     case BT_UNION:
-      return union_phi(compute_phi(pos, *b.op0), compute_phi(pos, *b.op1));
+      return union_phi(compute_phi(pos, *b.op0_), compute_phi(pos, *b.op1_));
     case BT_INTERSECTION:
-      return intersection_phi(compute_phi(pos, *b.op0),
-                              compute_phi(pos, *b.op1));
+      return intersection_phi(compute_phi(pos, *b.op0_),
+                              compute_phi(pos, *b.op1_));
     default:
       return 1e+20;
   }
 }
 
 scalar FluidSim::compute_phi(const Vector2s& pos) const {
-  return compute_phi(pos, *root_boundary);
+  return compute_phi(pos, *root_boundary_);
 }
 
 void FluidSim::init_random_particles() {
-  int num_particle = ni * nj;
-  for (int i = 0; i < ni; ++i) {
-    for (int j = 0; j < nj; ++j) {
+  int num_particle = ni_ * nj_;
+  for (int i = 0; i < ni_; ++i) {
+    for (int j = 0; j < nj_; ++j) {
       for (int k = 0; k < 2; ++k) {
-        scalar x = ((scalar)i + 0.5 +
-                    (((scalar)rand() / (scalar)RAND_MAX) * 2.0 - 1.0)) *
-                   dx;
-        scalar y = ((scalar)j + 0.5 +
-                    (((scalar)rand() / (scalar)RAND_MAX) * 2.0 - 1.0)) *
-                   dx;
-        Vector2s pt = Vector2s(x, y) + origin;
+        scalar x_ =
+            (static_cast<scalar>(i) + 0.5 +
+             ((static_cast<scalar>(rand()) / static_cast<scalar>(RAND_MAX)) *
+                  2.0 -
+              1.0)) *
+            dx_;
+        scalar y =
+            (static_cast<scalar>(j) + 0.5 +
+             ((static_cast<scalar>(rand()) / static_cast<scalar>(RAND_MAX)) *
+                  2.0 -
+              1.0)) *
+            dx_;
+        Vector2s pt = Vector2s(x_, y) + origin_;
 
         scalar phi = compute_phi(pt);
-        if (phi > dx * 20.0)
+        if (phi > dx_ * 20.0)
           add_particle(
-              Particle(pt, Vector2s::Zero(), dx / sqrt(2.0), PT_LIQUID));
+              Particle(pt, Vector2s::Zero(), dx_ / sqrt(2.0), PT_LIQUID));
       }
     }
   }
@@ -857,82 +871,82 @@ void FluidSim::map_p2g() {
 }
 
 void FluidSim::map_p2g_linear() {
-  // u-component of velocity
-  for (int j = 0; j < nj; ++j)
-    for (int i = 0; i < ni + 1; ++i) {
-      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
+  // u_-component of velocity
+  for (int j = 0; j < nj_; ++j)
+    for (int i = 0; i < ni_ + 1; ++i) {
+      Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
       std::vector<Particle*> neighbors;
-      m_sorter->getNeigboringParticles_cell(i, j, -1, 0, -1, 1, neighbors);
+      m_sorter_->getNeigboringParticles_cell(i, j, -1, 0, -1, 1, neighbors);
 
       scalar sumw = 0.0;
       scalar sumu = 0.0;
       for (Particle* p : neighbors) {
-        scalar w = 4.0 / 3.0 * M_PI * rho * p->radii * p->radii * p->radii *
-                   kernel::linear_kernel(p->x - pos, dx);
-        sumu += w * (p->v(0) + p->c.col(0).dot(pos - p->x));
+        scalar w = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_ *
+                   kernel::linear_kernel(p->x_ - pos, dx_);
+        sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
         sumw += w;
       }
 
-      u(i, j) = sumw ? sumu / sumw : 0.0;
+      u_(i, j) = sumw ? sumu / sumw : 0.0;
     }
 
-  // v-component of velocity
-  for (int j = 0; j < nj + 1; ++j)
-    for (int i = 0; i < ni; ++i) {
-      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+  // v_-component of velocity
+  for (int j = 0; j < nj_ + 1; ++j)
+    for (int i = 0; i < ni_; ++i) {
+      Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
       std::vector<Particle*> neighbors;
-      m_sorter->getNeigboringParticles_cell(i, j, -1, 1, -1, 0, neighbors);
+      m_sorter_->getNeigboringParticles_cell(i, j, -1, 1, -1, 0, neighbors);
 
       scalar sumw = 0.0;
       scalar sumu = 0.0;
       for (Particle* p : neighbors) {
-        scalar w = 4.0 / 3.0 * M_PI * rho * p->radii * p->radii * p->radii *
-                   kernel::linear_kernel(p->x - pos, dx);
-        sumu += w * (p->v(1) + p->c.col(1).dot(pos - p->x));
+        scalar w = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_ *
+                   kernel::linear_kernel(p->x_ - pos, dx_);
+        sumu += w * (p->v_(1) + p->c_.col(1).dot(pos - p->x_));
         sumw += w;
       }
 
-      v(i, j) = sumw ? sumu / sumw : 0.0;
+      v_(i, j) = sumw ? sumu / sumw : 0.0;
     }
 }
 
 void FluidSim::map_p2g_quadratic() {
-  // u-component of velocity
-  for (int j = 0; j < nj; ++j)
-    for (int i = 0; i < ni + 1; ++i) {
-      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
+  // u_-component of velocity
+  for (int j = 0; j < nj_; ++j)
+    for (int i = 0; i < ni_ + 1; ++i) {
+      Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
       std::vector<Particle*> neighbors;
-      m_sorter->getNeigboringParticles_cell(i, j, -2, 1, -1, 1, neighbors);
+      m_sorter_->getNeigboringParticles_cell(i, j, -2, 1, -1, 1, neighbors);
 
       scalar sumw = 0.0;
       scalar sumu = 0.0;
       for (Particle* p : neighbors) {
-        scalar m = 4.0 / 3.0 * M_PI * rho * p->radii * p->radii * p->radii;
-        scalar w = m * kernel::quadratic_kernel(p->x - pos, dx);
-        sumu += w * (p->v(0) + p->c.col(0).dot(pos - p->x));
+        scalar m = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_;
+        scalar w = m * kernel::quadratic_kernel(p->x_ - pos, dx_);
+        sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
         sumw += w;
       }
 
-      u(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
+      u_(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
     }
 
-  // v-component of velocity
-  for (int j = 0; j < nj + 1; ++j)
-    for (int i = 0; i < ni; ++i) {
-      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+  // v_-component of velocity
+  for (int j = 0; j < nj_ + 1; ++j)
+    for (int i = 0; i < ni_; ++i) {
+      Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
       std::vector<Particle*> neighbors;
-      m_sorter->getNeigboringParticles_cell(i, j, -1, 1, -2, 1, neighbors);
+      m_sorter_->getNeigboringParticles_cell(i, j, -1, 1, -2, 1, neighbors);
 
       scalar sumw = 0.0;
       scalar sumu = 0.0;
       for (Particle* p : neighbors) {
-        scalar m = 4.0 / 3.0 * M_PI * rho * p->radii * p->radii * p->radii;
-        scalar w = m * kernel::quadratic_kernel(p->x - pos, dx);
-        sumu += w * (p->v(1) + p->c.col(1).dot(pos - p->x));
+        scalar m = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_;
+        scalar w = m * kernel::quadratic_kernel(p->x_ - pos, dx_);
+        sumu += w * (p->v_(1) + p->c_.col(1).dot(pos - p->x_));
         sumw += w;
       }
 
-      v(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
+      v_(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
     }
 }
 
@@ -946,74 +960,74 @@ void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
                                     const scalar affine_rotational_ratio) {
   bool use_affine =
       affine_stretching_ratio > 0. || affine_rotational_ratio > 0.;
-  for (Particle& p : particles) {
-    if (p.type == PT_SOLID) continue;
+  for (Particle& p : particles_) {
+    if (p.type_ == PT_SOLID) continue;
 
     Matrix2s C = Matrix2s::Zero();
     Vector2s next_grid_velocity = get_velocity_and_affine_matrix_with_order(
-        p.x, dt, velocity_order, interpolation_order,
+        p.x_, dt, velocity_order, interpolation_order,
         use_affine ? (&C) : nullptr);
     Vector2s original_grid_velocity =
-        get_saved_velocity_with_order(p.x, interpolation_order);
-    Vector2s lagrangian_velocity = p.v;
+        get_saved_velocity_with_order(p.x_, interpolation_order);
+    Vector2s lagrangian_velocity = p.v_;
 
-    p.v = next_grid_velocity +
-          (lagrangian_velocity - original_grid_velocity) * lagrangian_ratio;
+    p.v_ = next_grid_velocity +
+           (lagrangian_velocity - original_grid_velocity) * lagrangian_ratio;
 
-    p.c = C * (affine_stretching_ratio + affine_rotational_ratio) * 0.5 +
-          C.transpose() * (affine_stretching_ratio - affine_rotational_ratio) *
-              0.5;
+    p.c_ = C * (affine_stretching_ratio + affine_rotational_ratio) * 0.5 +
+           C.transpose() * (affine_stretching_ratio - affine_rotational_ratio) *
+               0.5;
 
     if (lagrangian_symplecticity > 0.0) {
       scalar logdJ = C.trace() * dt;
-      p.logJ += logdJ;
+      p.logJ_ += logdJ;
       scalar pos_adj = lagrangian_symplecticity;
-      Vector2s pp = (p.x - origin) / dx;
-      scalar phi_value = interpolate_value(pp, nodal_solid_phi);
+      Vector2s pp = (p.x_ - origin_) / dx_;
+      scalar phi_value = interpolate_value(pp, nodal_solid_phi_);
       if (phi_value < 0) {
         Vector2s normal;
-        interpolate_gradient(normal, pp, nodal_solid_phi);
+        interpolate_gradient(normal, pp, nodal_solid_phi_);
         normal.normalize();
         float dotnv = -normal.dot(lagrangian_velocity);
         if (dotnv > 0.0) {
           pos_adj = 0.0;
         }
       }
-      if (p.logJ < -0.001) {
+      if (p.logJ_ < -0.001) {
         pos_adj = 0.0;
       }
-      p.x += (next_grid_velocity +
-              (lagrangian_velocity - original_grid_velocity) *
-                  lagrangian_ratio * lagrangian_symplecticity) *
-             dt;
+      p.x_ += (next_grid_velocity +
+               (lagrangian_velocity - original_grid_velocity) *
+                   lagrangian_ratio * lagrangian_symplecticity) *
+              dt;
     } else {
-      p.x += next_grid_velocity * dt;    
+      p.x_ += next_grid_velocity * dt;
     }
   }
 }
 
 void FluidSim::render_boundaries(const Boundary& b) {
-  switch (b.type) {
+  switch (b.type_) {
     case BT_CIRCLE:
-      draw_circle2d(b.center, b.parameter(0), 64);
+      draw_circle2d(b.center_, b.parameter_(0), 64);
       break;
     case BT_BOX:
-      draw_box2d(b.center, b.parameter(0), b.parameter(1));
+      draw_box2d(b.center_, b.parameter_(0), b.parameter_(1));
       break;
     case BT_TORUS:
-      draw_circle2d(b.center, b.parameter(0), 64);
-      draw_circle2d(b.center, b.parameter(1), 64);
+      draw_circle2d(b.center_, b.parameter_(0), 64);
+      draw_circle2d(b.center_, b.parameter_(1), 64);
       break;
     case BT_HEXAGON:
-      draw_circle2d(b.center, b.parameter(0), 6);
+      draw_circle2d(b.center_, b.parameter_(0), 6);
       break;
     case BT_TRIANGLE:
-      draw_circle2d(b.center, b.parameter(0), 3);
+      draw_circle2d(b.center_, b.parameter_(0), 3);
       break;
     case BT_UNION:
     case BT_INTERSECTION:
-      render_boundaries(*b.op0);
-      render_boundaries(*b.op1);
+      render_boundaries(*b.op0_);
+      render_boundaries(*b.op1_);
       break;
     default:
       break;
@@ -1022,94 +1036,98 @@ void FluidSim::render_boundaries(const Boundary& b) {
 
 void FluidSim::render() {
   glPushMatrix();
-  glScaled(1.0 / (dx * ni), 1.0 / (dx * ni), 1.0 / (dx * ni));
+  glScaled(1.0 / (dx_ * ni_), 1.0 / (dx_ * ni_), 1.0 / (dx_ * ni_));
 
-  if (draw_grid) {
+  if (draw_grid_) {
     glColor3f(0.75, 0.75, 0.75);
     glLineWidth(1);
-    draw_grid2d(origin, dx, ni, nj);
+    draw_grid2d(origin_, dx_, ni_, nj_);
   }
 
-  if (draw_boundaries) {
+  if (draw_boundaries_) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    render_boundaries(*root_boundary);
+    render_boundaries(*root_boundary_);
   }
 
-  if (draw_particles) {
+  if (draw_particles_) {
     glColor3d(0, 0, 1);
     glPointSize(5);
     glBegin(GL_POINTS);
-    for (unsigned int i = 0; i < particles.size(); ++i) {
-      if (particles[i].type == PT_LIQUID) glVertex2dv(particles[i].x.data());
+    for (unsigned int i = 0; i < particles_.size(); ++i) {
+      if (particles_[i].type_ == PT_LIQUID)
+        glVertex2dv(particles_[i].x_.data());
     }
     glEnd();
 
     glColor3d(1, 0, 0);
     glBegin(GL_POINTS);
-    for (unsigned int i = 0; i < particles.size(); ++i) {
-      if (particles[i].type == PT_SOLID) glVertex2dv(particles[i].x.data());
+    for (unsigned int i = 0; i < particles_.size(); ++i) {
+      if (particles_[i].type_ == PT_SOLID) glVertex2dv(particles_[i].x_.data());
     }
     glEnd();
   }
-  if (draw_velocities) {
+  if (draw_velocities_) {
     glColor3d(1, 0, 0);
-    for (int j = 0; j < nj; ++j)
-      for (int i = 0; i < ni; ++i) {
-        Vector2s pos = Vector2s((i + 0.5) * dx, (j + 0.5) * dx) + origin;
-        draw_arrow2d(pos, pos + 0.01 * get_velocity(pos), 0.1 * dx);
+    for (int j = 0; j < nj_; ++j)
+      for (int i = 0; i < ni_; ++i) {
+        Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
+        draw_arrow2d(pos, pos + 0.01 * get_velocity(pos), 0.1 * dx_);
       }
   }
 
   glPopMatrix();
 }
 
-FluidSim::Boundary::Boundary(const Vector2s& center_,
-                             const Vector2s& parameter_, BOUNDARY_TYPE type_,
-                             bool inside)
-    : center(center_),
-      parameter(parameter_),
-      type(type_),
-      sign(inside ? -1.0 : 1.0) {}
+FluidSim::Boundary::Boundary(const Vector2s& center, const Vector2s& parameter,
+                             BOUNDARY_TYPE type, bool inside)
+    : center_(center),
+      parameter_(parameter),
+      type_(type),
+      sign_(inside ? -1.0 : 1.0) {}
 
-FluidSim::Boundary::Boundary(Boundary* op0_, Boundary* op1_,
-                             BOUNDARY_TYPE type_)
-    : op0(op0_), op1(op1_), type(type_), sign(op0_ ? op0_->sign : false) {}
+FluidSim::Boundary::Boundary(Boundary* op0, Boundary* op1, BOUNDARY_TYPE type)
+    : op0_(op0), op1_(op1), type_(type), sign_(op0 ? op0->sign_ : false) {}
 
-Particle::Particle(const Vector2s& x_, const Vector2s& v_, const scalar& radii_,
-                   ParticleType type_)
-    : x(x_), v(v_), radii(radii_), dens(0), logJ(0), type(type_) {
-  c.setZero();
-  buf0.setZero();
+Particle::Particle(const Vector2s& x, const Vector2s& v, const scalar& radii,
+                   ParticleType type)
+    : x_(x), v_(v), radii_(radii), dens_(0), logJ_(0), type_(type) {
+  c_.setZero();
+  buf0_.setZero();
 }
 
 Particle::Particle()
-    : x(Vector2s::Zero()),
-      v(Vector2s::Zero()),
-      radii(0.0),
-      dens(0),
-      logJ(0.0),
-      type(PT_LIQUID) {
-  c.setZero();
-  buf0.setZero();
+    : x_(Vector2s::Zero()),
+      v_(Vector2s::Zero()),
+      radii_(0.0),
+      dens_(0),
+      logJ_(0.0),
+      type_(PT_LIQUID) {
+  c_.setZero();
+  buf0_.setZero();
 }
 
 Particle::Particle(const Particle& p)
-    : x(p.x), v(p.v), radii(p.radii), dens(0), logJ(0.0), type(p.type) {
-  c.setZero();
-  buf0.setZero();
+    : x_(p.x_),
+      v_(p.v_),
+      radii_(p.radii_),
+      dens_(0),
+      logJ_(0.0),
+      type_(p.type_) {
+  c_.setZero();
+  buf0_.setZero();
 }
 
-// Apply several iterations of a very simple "Jacobi"-style propagation of valid
-// velocity data in all directions
+// Apply several iterations of a very simple "Jacobi"-style propagation of
+// valid_ velocity data in all directions
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
                  const Array2s& grid_liquid_weight, Array2c& valid,
-                 Array2c old_valid, const Vector2i& offset) {
-  // Initialize the list of valid cells
+                 Array2c old_valid_, const Vector2i& offset) {
+  // Initialize the list of valid_ cells
   for (int j = 0; j < valid.nj; ++j) valid(0, j) = valid(valid.ni - 1, j) = 0;
   for (int i = 0; i < valid.ni; ++i) valid(i, 0) = valid(i, valid.nj - 1) = 0;
 
   Array2s* pgrids[] = {&grid, &old_grid};
-  Array2c* pvalids[] = {&valid, &old_valid};
+  Array2c* pvalids[] = {&valid, &old_valid_};
 
   for (int j = 1; j < grid.nj - 1; ++j)
     for (int i = 1; i < grid.ni - 1; ++i)
@@ -1117,7 +1135,7 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
                     (grid_liquid_weight(i, j) < 0 ||
                      grid_liquid_weight(i + offset(0), j + offset(1)) < 0);
 
-  old_valid = valid;
+  old_valid_ = valid;
 
   for (int layers = 0; layers < 4; ++layers) {
     Array2s* pgrid_source = pgrids[layers & 1];
@@ -1149,10 +1167,10 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
             ++count;
           }
 
-          // If any of neighbour cells were valid,
-          // assign the cell their average value and tag it as valid
+          // If any of neighbour cells were valid_,
+          // assign the cell their average value and tag it as valid_
           if (count > 0) {
-            (*pgrid_target)(i, j) = sum / (scalar)count;
+            (*pgrid_target)(i, j) = sum / static_cast<scalar>(count);
             (*pvalid_target)(i, j) = 1;
           }
         }

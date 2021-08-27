@@ -27,28 +27,28 @@ class sorter;
 enum ParticleType { PT_LIQUID, PT_SOLID };
 
 struct Particle {
-  Particle(const Vector2s& x_, const Vector2s& v_, const scalar& radii_,
+  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii,
            ParticleType type);
   Particle();
   Particle(const Particle&);
 
-  Vector2s x;
-  Vector2s v;
-  Matrix2s c;
+  Vector2s x_;
+  Vector2s v_;
+  Matrix2s c_;
 
-  Vector2s buf0;
+  Vector2s buf0_;
 
-  scalar radii;
-  scalar dens;
-  scalar logJ;
-  ParticleType type;
+  scalar radii_;
+  scalar dens_;
+  scalar logJ_;
+  ParticleType type_;
 };
 
 class FluidSim {
  public:
   virtual ~FluidSim();
 
-  scalar rho;
+  scalar rho_;
 
   enum INTEGRATOR_TYPE {
     IT_PIC,
@@ -97,14 +97,14 @@ class FluidSim {
 
     Boundary(Boundary* op0_, Boundary* op1_, BOUNDARY_TYPE type_);
 
-    Vector2s center;
-    Vector2s parameter;
+    Vector2s center_;
+    Vector2s parameter_;
 
-    Boundary* op0;
-    Boundary* op1;
+    Boundary* op0_;
+    Boundary* op1_;
 
-    BOUNDARY_TYPE type;
-    scalar sign;
+    BOUNDARY_TYPE type_;
+    scalar sign_;
   };
 
   void initialize(const Vector2s& origin_, scalar width, int ni_, int nj_,
@@ -120,39 +120,39 @@ class FluidSim {
   scalar compute_phi(const Vector2s& pos, const Boundary& b) const;
 
   /*! Boundaries */
-  Boundary* root_boundary;
+  Boundary* root_boundary_;
 
   /*! Grid Origin */
-  Vector2s origin;
+  Vector2s origin_;
 
   /*! Grid dimensions */
-  int ni, nj;
-  scalar dx;
+  int ni_, nj_;
+  scalar dx_;
 
   /*! Fluid velocity */
-  Array2s u, v;
-  Array2s temp_u, temp_v;
-  Array2s saved_u, saved_v;
+  Array2s u_, v_;
+  Array2s temp_u_, temp_v_;
+  Array2s saved_u_, saved_v_;
 
   /*! Tracer particles */
-  std::vector<Particle> particles;
+  std::vector<Particle> particles_;
 
   /*! Static geometry representation */
-  Array2s nodal_solid_phi;
-  Array2s liquid_phi;
-  Array2s u_weights, v_weights;
+  Array2s nodal_solid_phi_;
+  Array2s liquid_phi_;
+  Array2s u_weights_, v_weights_;
 
   /*! Data arrays for extrapolation */
-  Array2c valid, old_valid;
-  Array2c u_valid, v_valid;
+  Array2c valid_, old_valid_;
+  Array2c u_valid_, v_valid_;
 
-  sorter* m_sorter;
+  sorter* m_sorter_;
 
   /*! Solver data */
-  robertbridson::PCGSolver<scalar> solver;
-  robertbridson::SparseMatrix<scalar> matrix;
-  std::vector<double> rhs;
-  std::vector<double> pressure;
+  robertbridson::PCGSolver<scalar> solver_;
+  robertbridson::SparseMatrix<scalar> matrix_;
+  std::vector<double> rhs_;
+  std::vector<double> pressure_;
 
   Vector2s get_velocity_and_affine_matrix_with_order(
       const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
@@ -197,10 +197,10 @@ class FluidSim {
   void correct(scalar dt);
   void resample(Vector2s& p, Vector2s& u, Matrix2s& c);
 
-  bool draw_grid;
-  bool draw_particles;
-  bool draw_velocities;
-  bool draw_boundaries;
+  bool draw_grid_;
+  bool draw_particles_;
+  bool draw_velocities_;
+  bool draw_boundaries_;
 
  protected:
   inline scalar circle_phi(const Vector2s& position, const Vector2s& centre,
