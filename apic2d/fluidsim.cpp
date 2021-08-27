@@ -106,8 +106,10 @@ void FluidSim::initialize(const Vector2s& origin, scalar width, int ni, int nj,
   m_sorter_ = new sorter(ni_, nj_);
 }
 
-// Initialize the grid-based signed distance field that dictates the position of
-// the solid boundary
+/*!
+  \brief  Initialize the grid-based signed distance field that dictates the position of
+          the solid boundary
+*/
 void FluidSim::update_boundary() {
   for (int j = 0; j < nj_ + 1; ++j)
     for (int i = 0; i < ni_ + 1; ++i) {
@@ -237,7 +239,9 @@ void FluidSim::correct(scalar dt) {
   }
 }
 
-// The main fluid simulation step
+/*!
+  \brief  The main fluid simulation step
+*/
 void FluidSim::advance(scalar dt) {
   // Passively advect particles_
   m_sorter_->sort(this);
@@ -250,7 +254,7 @@ void FluidSim::advance(scalar dt) {
 
   temp_u_ = u_;
   temp_v_ = v_;
-  // Pressure projection only produces valid_ velocities in faces with non-zero
+  // Pressure projection only produces valid velocities in faces with non-zero
   // associated face area. Because the advection step may interpolate from these
   // invalid faces, we must extrapolate velocities from the fluid domain into
   // these zero-area faces.
@@ -267,7 +271,8 @@ void FluidSim::advance(scalar dt) {
 
   switch (integration_scheme) {
     case IT_PIC:
-      // PIC is a specific case of a more general (Affine) FLIP scheme
+      // The original PIC, which is a specific case of a more general (Affine)
+      // FLIP scheme
       map_g2p_flip_general(dt, 0.0, 0.0, 0.0, 0.0);
       break;
 
@@ -277,22 +282,23 @@ void FluidSim::advance(scalar dt) {
       break;
 
     case IT_RPIC:
-      // RPIC is a specific case of a more general Affine FLIP scheme
+      // RPIC is a rotation-augmented PIC scheme
       map_g2p_flip_general(dt, 0.0, 0.0, 0.0, 1.0);
       break;
 
     case IT_APIC:
-      // APIC is a specific case of a more general Affine FLIP scheme
+      // APIC is an affine-augmented PIC scheme
       map_g2p_flip_general(dt, 0.0, 0.0, 1.0, 1.0);
       break;
 
     case IT_AFLIP:
-      // APIC is a specific case of a more general Affine FLIP scheme
+      // AFLIP is an affine-augmented FLIP scheme
       map_g2p_flip_general(dt, lagrangian_ratio, 0.0, 1.0, 1.0);
       break;
 
     case IT_ASFLIP:
-      // APIC is a specific case of a more general Affine FLIP scheme
+      // ASFLIP is an affine-augmented PIC scheme with easier particle
+      // separation
       map_g2p_flip_general(dt, lagrangian_ratio, 1.0, 1.0, 1.0);
       break;
 
@@ -319,17 +325,19 @@ void FluidSim::add_force(scalar dt) {
   }
 }
 
-// For extrapolated points, replace the normal component
-// of velocity with the object velocity (in this case zero).
+/*!
+  \brief  For extrapolated points, replace the normal component
+          of velocity with the object velocity (in this case zero).
+*/
 void FluidSim::constrain_velocity() {
   temp_u_ = u_;
   temp_v_ = v_;
 
-  //(At lower grid resolutions, the normal estimate from the signed
+  // At lower grid resolutions, the normal estimate from the signed
   // distance function is poor, so it doesn't work quite as well.
-  // An exact normal would do better.)
+  // An exact normal would do better.
 
-  // constrain u_
+  // constrain u
   for (int j = 0; j < u_.nj; ++j)
     for (int i = 0; i < u_.ni; ++i) {
       if (u_weights_(i, j) == 0) {
@@ -345,7 +353,7 @@ void FluidSim::constrain_velocity() {
       }
     }
 
-  // constrain v_
+  // constrain v
   for (int j = 0; j < v_.nj; ++j)
     for (int i = 0; i < v_.ni; ++i) {
       if (v_weights_(i, j) == 0) {
@@ -367,7 +375,7 @@ void FluidSim::constrain_velocity() {
 }
 
 void FluidSim::compute_phi() {
-  // Estimate from particles_
+  // Estimate from particles
   liquid_phi_.assign(3 * dx_);
   for (int p = 0; p < particles_.size(); ++p) {
     if (particles_[p].type_ != PT_LIQUID) continue;
@@ -392,7 +400,7 @@ void FluidSim::compute_phi() {
       }
   }
 
-  //"extrapolate" phi into solids if nearby
+  // "extrapolate" phi into solids if nearby
   for (int j = 0; j < nj_; ++j) {
     for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
@@ -402,19 +410,21 @@ void FluidSim::compute_phi() {
   }
 }
 
-// Add a tracer particle for visualization
+/*! 
+  \brief  Add a tracer particle for visualization
+*/
 void FluidSim::add_particle(const Particle& p) { particles_.push_back(p); }
 
-// move the particles_ in the fluid
+/*!
+  \brief  Particles can still occasionally leave the domain due to truncation
+          errors, interpolation error, or large timesteps, so we project them
+          back in for good measure.
+*/
 void FluidSim::particle_boundary_collision(scalar dt) {
   for (int p = 0; p < particles_.size(); ++p) {
     if (particles_[p].type_ == PT_SOLID) continue;
 
     Vector2s pp = (particles_[p].x_ - origin_) / dx_;
-
-    // Particles can still occasionally leave the domain due to truncation
-    // errors, interpolation error, or large timesteps, so we project them back
-    // in for good measure.
 
     // Try commenting this section out to see the degree of accumulated error.
     scalar phi_value = interpolate_value(pp, nodal_solid_phi_);
@@ -598,7 +608,9 @@ Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
   }
 }
 
-// Interpolate velocity from the MAC grid.
+/*!
+  \brief  Interpolate velocity from the MAC grid.
+*/
 Vector2s FluidSim::get_velocity(const Vector2s& position) {
   // Interpolate the velocity from the u_ and v_ grids
   Vector2s p = (position - origin_) / dx_;
@@ -651,8 +663,10 @@ Vector2s FluidSim::get_saved_velocity_with_order(
                                 : get_saved_velocity_quadratic(position);
 }
 
-// Given two signed distance values, determine what fraction of a connecting
-// segment is "inside"
+/*!
+  \brief  Given two signed distance values, determine what fraction of a connecting
+          segment is "inside"
+*/
 scalar fraction_inside(scalar phi_left, scalar phi_right) {
   if (phi_left < 0 && phi_right < 0) return 1;
   if (phi_left < 0 && phi_right >= 0) return phi_left / (phi_left - phi_right);
@@ -662,8 +676,10 @@ scalar fraction_inside(scalar phi_left, scalar phi_right) {
     return 0;
 }
 
-// Compute finite-volume style face-weights for fluid from nodal signed
-// distances
+/*!
+  \brief  Compute finite-volume style face-weights for fluid from nodal signed
+          distances
+*/
 void FluidSim::compute_weights() {
   for (int j = 0; j < u_weights_.nj; ++j)
     for (int i = 0; i < u_weights_.ni; ++i) {
@@ -679,8 +695,10 @@ void FluidSim::compute_weights() {
     }
 }
 
-// An implementation of the variational pressure projection solve for static
-// geometry
+/*!
+  \brief  An implementation of the variational pressure projection solve for static
+          geometry
+*/
 void FluidSim::solve_pressure(scalar dt) {
   // This linear system could be simplified, but I've left it as is for clarity
   // and consistency with the standard naive discretization
@@ -758,7 +776,6 @@ void FluidSim::solve_pressure(scalar dt) {
   }
 
   // Solve the system using Robert Bridson's incomplete Cholesky PCG solver
-
   scalar tolerance;
   int iterations;
   bool success = solver_.solve(matrix_, rhs_, pressure_, tolerance, iterations);
@@ -871,7 +888,7 @@ void FluidSim::map_p2g() {
 }
 
 void FluidSim::map_p2g_linear() {
-  // u_-component of velocity
+  // u-component of velocity
   for (int j = 0; j < nj_; ++j)
     for (int i = 0; i < ni_ + 1; ++i) {
       Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
@@ -890,7 +907,7 @@ void FluidSim::map_p2g_linear() {
       u_(i, j) = sumw ? sumu / sumw : 0.0;
     }
 
-  // v_-component of velocity
+  // v-component of velocity
   for (int j = 0; j < nj_ + 1; ++j)
     for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
@@ -911,7 +928,7 @@ void FluidSim::map_p2g_linear() {
 }
 
 void FluidSim::map_p2g_quadratic() {
-  // u_-component of velocity
+  // u-component of velocity
   for (int j = 0; j < nj_; ++j)
     for (int i = 0; i < ni_ + 1; ++i) {
       Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
@@ -930,7 +947,7 @@ void FluidSim::map_p2g_quadratic() {
       u_(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
     }
 
-  // v_-component of velocity
+  // v-component of velocity
   for (int j = 0; j < nj_ + 1; ++j)
     for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
@@ -951,9 +968,9 @@ void FluidSim::map_p2g_quadratic() {
 }
 
 /*!
- \brief  A general affine FLIP scheme that unifies all the other FLIP schemes
-         used in this code
- */
+  \brief  A general affine FLIP scheme that unifies all the other FLIP schemes
+          used in this code
+*/
 void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
                                     const scalar lagrangian_symplecticity,
                                     const scalar affine_stretching_ratio,
@@ -1117,8 +1134,10 @@ Particle::Particle(const Particle& p)
   buf0_.setZero();
 }
 
-// Apply several iterations of a very simple "Jacobi"-style propagation of
-// valid_ velocity data in all directions
+/*! 
+  \brief Apply several iterations of a very simple "Jacobi"-style propagation of
+         valid velocity data in all directions
+*/
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight,
                  const Array2s& grid_liquid_weight, Array2c& valid,
                  Array2c old_valid_, const Vector2i& offset) {
