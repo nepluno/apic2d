@@ -65,6 +65,21 @@ inline scalar sharp_kernel(const scalar& r2, const scalar& h) {
 inline scalar linear_kernel(const Vector2s& d, const scalar& h) {
   return std::max((1.0 - fabs(d(0) / h)) * (1.0 - fabs(d(1) / h)), 0.0);
 }
+
+inline scalar quadratic_kernel_1d(const scalar& d, const scalar& h) {
+  scalar r = fabs(d) / h;
+  if (r < 0.5) {
+    return 0.75 - r * r;
+  } else if (r < 1.5) {
+    return 0.5 * (1.5 - r) * (1.5 - r);
+  } else {
+    return 0.0;
+  }
+}
+
+inline scalar quadratic_kernel(const Vector2s& d, const scalar& h) {
+  return quadratic_kernel_1d(d(0), h) * quadratic_kernel_1d(d(1), h);
+}
 }  // namespace kernel
 
 #endif  // APIC2D_KERNEL_H_

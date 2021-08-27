@@ -39,10 +39,20 @@
 const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_APIC;
 
 // Change here to try different order for velocity evaluation from grid,
-// options: VO_EULER: first order evaluation VO_RA2: Ralston's second order
-// evaluation VO_RK3: Runge Kutta's 3rd-order method VO_RK4: Runge Kutta's
-// 4rd-order method
+// options: 
+// VO_EULER: first order evaluation 
+// VO_RA2: Ralston's second order
+//         evaluation 
+// VO_RK3: Runge Kutta's 3rd-order method 
+// VO_RK4: Runge Kutta's
+//         4rd-order method
 const FluidSim::VELOCITY_ORDER velocity_order = FluidSim::VO_EULER;
+
+// Change here to try different order for interpolation
+// options: 
+// IO_LINEAR: linear interpolation
+// IO_QUADRATIC: quadratic interpolation
+const FluidSim::INTERPOLATION_ORDER interpolation_order = FluidSim::IO_LINEAR;
 
 const scalar lagrangian_ratio = 0.97f;
 const int particle_correction_step = 1;
@@ -434,47 +444,143 @@ void FluidSim::project(scalar dt) {
   solve_pressure(dt);
 }
 
+Vector2s FluidSim::get_velocity_quadratic_impl(const Vector2s& position,
+                                               const Array2s& uu,
+                                               const Array2s& vv) {
+  Vector2s p = (position - origin) / dx;
+  Vector2s p0 = p - Vector2s(0, 0.5);
+  Vector2s p1 = p - Vector2s(0.5, 0);
+
+  Vector2s ret = Vector2s::Zero();
+  Vector2i ip0 = Vector2i(static_cast<int>(p0(0)), static_cast<int>(p0(1)));
+  for (int i = ip0(0) - 1; i <= ip0(0) + 2; ++i) {
+    for (int j = ip0(1) - 1; j <= ip0(1) + 2; ++j) {
+      if (i < 0 || i > ni || j < 0 || j >= nj) {
+        continue;
+      }
+      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
+      scalar w = kernel::quadratic_kernel(position - pos, dx);
+      ret(0) += uu(i, j) * w;
+    }
+  }
+
+  Vector2i ip1 = Vector2i(static_cast<int>(p1(0)), static_cast<int>(p1(1)));
+  for (int i = ip1(0) - 1; i <= ip1(0) + 2; ++i) {
+    for (int j = ip1(1) - 1; j <= ip1(1) + 2; ++j) {
+      if (i < 0 || i >= ni || j < 0 || j > nj) {
+        continue;
+      }
+      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+      scalar w = kernel::quadratic_kernel(position - pos, dx);
+      ret(1) += vv(i, j) * w;
+    }
+  }
+
+  return ret;
+}
+
+Matrix2s FluidSim::get_affine_matrix_quadratic_impl(const Vector2s& position,
+    const Array2s& uu,
+    const Array2s& vv) {
+  Vector2s p = (position - origin) / dx;
+  Vector2s p0 = p - Vector2s(0, 0.5);
+  Vector2s p1 = p - Vector2s(0.5, 0);
+
+  Matrix2s ret = Matrix2s::Zero();
+  scalar invD = 4.0 / (dx * dx);
+  Vector2i ip0 = Vector2i(static_cast<int>(p0(0)), static_cast<int>(p0(1)));
+  for (int i = ip0(0) - 1; i <= ip0(0) + 2; ++i) {
+    for (int j = ip0(1) - 1; j <= ip0(1) + 2; ++j) {
+      if (i < 0 || i > ni || j < 0 || j >= nj) {
+        continue;
+      }
+      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
+      scalar w = kernel::quadratic_kernel(position - pos, dx);
+      ret.block<2, 1>(0, 0) += u(i, j) * w * (position - pos) * invD;
+    }
+  }
+
+  Vector2i ip1 = Vector2i(static_cast<int>(p1(0)), static_cast<int>(p1(1)));
+  for (int i = ip1(0) - 1; i <= ip1(0) + 2; ++i) {
+    for (int j = ip1(1) - 1; j <= ip1(1) + 2; ++j) {
+      if (i < 0 || i >= ni || j < 0 || j > nj) {
+        continue;
+      }
+      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+      scalar w = kernel::quadratic_kernel(position - pos, dx);
+      ret.block<2, 1>(0, 1) += v(i, j) * w * (position - pos) * invD;
+    }
+  }
+
+  return ret;
+}
+
+Vector2s FluidSim::get_velocity_quadratic(const Vector2s& position) {
+  return get_velocity_quadratic_impl(position, u, v);
+}
+
+Matrix2s FluidSim::get_affine_matrix_quadratic(const Vector2s& position) {
+  return get_affine_matrix_quadratic_impl(position, u, v);
+}
+
+Vector2s FluidSim::get_saved_velocity_quadratic(const Vector2s& position) {
+  return get_velocity_quadratic_impl(position, saved_u, saved_v);
+}
+
+Matrix2s FluidSim::get_saved_affine_matrix_quadratic(const Vector2s& position) {
+  return get_affine_matrix_quadratic_impl(position, saved_u, saved_v);
+}
+
 Vector2s FluidSim::get_velocity_and_affine_matrix_with_order(
-    const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER order,
-    Matrix2s* affine_matrix) {
-  switch (order) {
+    const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
+    FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix) {
+  auto get_velocity_func = (i_order == IO_LINEAR)
+                               ? &FluidSim::get_velocity
+                               : &FluidSim::get_velocity_quadratic;
+  auto get_affine_matrix_func = (i_order == IO_LINEAR)
+                                    ? &FluidSim::get_affine_matrix
+                                    : &FluidSim::get_affine_matrix_quadratic;
+
+  switch (v_order) {
     case FluidSim::VO_EULER:
       if (affine_matrix) {
-        *affine_matrix = get_affine_matrix(position);
+        *affine_matrix = (this->*get_affine_matrix_func)(position);
       }
-      return get_velocity(position);
+      return (this->*get_velocity_func)(position);
     case FluidSim::VO_RA2: {
-      Vector2s v0 = get_velocity(position);
-      Vector2s v1 = get_velocity(position + v0 * 2.0 / 3.0 * dt);
+      Vector2s v0 = (this->*get_velocity_func)(position);
+      Vector2s v1 = (this->*get_velocity_func)(position + v0 * 2.0 / 3.0 * dt);
       if (affine_matrix) {
-        Matrix2s a0 = get_affine_matrix(position);
-        Matrix2s a1 = get_affine_matrix(position + v0 * 2.0 / 3.0 * dt);
+        Matrix2s a0 = (this->*get_affine_matrix_func)(position);
+        Matrix2s a1 =
+            (this->*get_affine_matrix_func)(position + v0 * 2.0 / 3.0 * dt);
         *affine_matrix = a0 * 0.25 + a1 * 0.75;
       }
       return v0 * 0.25 + v1 * 0.75;
     }
     case FluidSim::VO_RK3: {
-      Vector2s v0 = get_velocity(position);
-      Vector2s v1 = get_velocity(position + v0 * 0.5 * dt);
-      Vector2s v2 = get_velocity(position + (v1 * 2.0 - v0) * dt);
+      Vector2s v0 = (this->*get_velocity_func)(position);
+      Vector2s v1 = (this->*get_velocity_func)(position + v0 * 0.5 * dt);
+      Vector2s v2 = (this->*get_velocity_func)(position + (v1 * 2.0 - v0) * dt);
       if (affine_matrix) {
-        Matrix2s a0 = get_affine_matrix(position);
-        Matrix2s a1 = get_affine_matrix(position + v0 * 0.5 * dt);
-        Matrix2s a2 = get_affine_matrix(position + (v1 * 2.0 - v0) * dt);
+        Matrix2s a0 = (this->*get_affine_matrix_func)(position);
+        Matrix2s a1 = (this->*get_affine_matrix_func)(position + v0 * 0.5 * dt);
+        Matrix2s a2 =
+            (this->*get_affine_matrix_func)(position + (v1 * 2.0 - v0) * dt);
         *affine_matrix = a0 / 6.0 + a1 * (2.0 / 3.0) + a2 / 6.0;
       }
       return v0 / 6.0 + v1 * (2.0 / 3.0) + v2 / 6.0;
     }
     case FluidSim::VO_RK4: {
-      Vector2s v0 = get_velocity(position);
-      Vector2s v1 = get_velocity(position + v0 * 0.5 * dt);
-      Vector2s v2 = get_velocity(position + v1 * 0.5 * dt);
-      Vector2s v3 = get_velocity(position + v2 * dt);
+      Vector2s v0 = (this->*get_velocity_func)(position);
+      Vector2s v1 = (this->*get_velocity_func)(position + v0 * 0.5 * dt);
+      Vector2s v2 = (this->*get_velocity_func)(position + v1 * 0.5 * dt);
+      Vector2s v3 = (this->*get_velocity_func)(position + v2 * dt);
       if (affine_matrix) {
-        Matrix2s a0 = get_affine_matrix(position);
-        Matrix2s a1 = get_affine_matrix(position + v0 * 0.5 * dt);
-        Matrix2s a2 = get_affine_matrix(position + v1 * 0.5 * dt);
-        Matrix2s a3 = get_affine_matrix(position + v2 * dt);
+        Matrix2s a0 = (this->*get_affine_matrix_func)(position);
+        Matrix2s a1 = (this->*get_affine_matrix_func)(position + v0 * 0.5 * dt);
+        Matrix2s a2 = (this->*get_affine_matrix_func)(position + v1 * 0.5 * dt);
+        Matrix2s a3 = (this->*get_affine_matrix_func)(position + v2 * dt);
         *affine_matrix = a0 / 6.0 + a1 / 3.0 + a2 / 3.0 + a3 / 6.0;
       }
       return v0 / 6.0 + v1 / 3.0 + v2 / 3.0 + v3 / 6.0;
@@ -529,6 +635,12 @@ Vector2s FluidSim::get_saved_velocity(const Vector2s& position) {
   scalar v_value = interpolate_value(p1, saved_v);
 
   return Vector2s(u_value, v_value);
+}
+
+Vector2s FluidSim::get_saved_velocity_with_order(
+    const Vector2s& position, FluidSim::INTERPOLATION_ORDER i_order) {
+  return (i_order == IO_LINEAR) ? get_saved_velocity(position)
+                                : get_saved_velocity_quadratic(position);
 }
 
 // Given two signed distance values, determine what fraction of a connecting
@@ -738,6 +850,13 @@ void FluidSim::init_random_particles() {
 }
 
 void FluidSim::map_p2g() {
+  if (interpolation_order == IO_LINEAR)
+    map_p2g_linear();
+  else
+    map_p2g_quadratic();
+}
+
+void FluidSim::map_p2g_linear() {
   // u-component of velocity
   for (int j = 0; j < nj; ++j)
     for (int i = 0; i < ni + 1; ++i) {
@@ -777,6 +896,46 @@ void FluidSim::map_p2g() {
     }
 }
 
+void FluidSim::map_p2g_quadratic() {
+  // u-component of velocity
+  for (int j = 0; j < nj; ++j)
+    for (int i = 0; i < ni + 1; ++i) {
+      Vector2s pos = Vector2s(i * dx, (j + 0.5) * dx) + origin;
+      std::vector<Particle*> neighbors;
+      m_sorter->getNeigboringParticles_cell(i, j, -2, 1, -1, 1, neighbors);
+
+      scalar sumw = 0.0;
+      scalar sumu = 0.0;
+      for (Particle* p : neighbors) {
+        scalar m = 4.0 / 3.0 * M_PI * rho * p->radii * p->radii * p->radii;
+        scalar w = m * kernel::quadratic_kernel(p->x - pos, dx);
+        sumu += w * (p->v(0) + p->c.col(0).dot(pos - p->x));
+        sumw += w;
+      }
+
+      u(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
+    }
+
+  // v-component of velocity
+  for (int j = 0; j < nj + 1; ++j)
+    for (int i = 0; i < ni; ++i) {
+      Vector2s pos = Vector2s((i + 0.5) * dx, j * dx) + origin;
+      std::vector<Particle*> neighbors;
+      m_sorter->getNeigboringParticles_cell(i, j, -1, 1, -2, 1, neighbors);
+
+      scalar sumw = 0.0;
+      scalar sumu = 0.0;
+      for (Particle* p : neighbors) {
+        scalar m = 4.0 / 3.0 * M_PI * rho * p->radii * p->radii * p->radii;
+        scalar w = m * kernel::quadratic_kernel(p->x - pos, dx);
+        sumu += w * (p->v(1) + p->c.col(1).dot(pos - p->x));
+        sumw += w;
+      }
+
+      v(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
+    }
+}
+
 /*!
  \brief  A general affine FLIP scheme that unifies all the other FLIP schemes
          used in this code
@@ -792,8 +951,10 @@ void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
 
     Matrix2s C = Matrix2s::Zero();
     Vector2s next_grid_velocity = get_velocity_and_affine_matrix_with_order(
-        p.x, dt, velocity_order, use_affine ? (&C) : nullptr);
-    Vector2s original_grid_velocity = get_saved_velocity(p.x);
+        p.x, dt, velocity_order, interpolation_order,
+        use_affine ? (&C) : nullptr);
+    Vector2s original_grid_velocity =
+        get_saved_velocity_with_order(p.x, interpolation_order);
     Vector2s lagrangian_velocity = p.v;
 
     p.v = next_grid_velocity +

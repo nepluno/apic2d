@@ -70,6 +70,13 @@ class FluidSim {
     VO_COUNT
   };
 
+  enum INTERPOLATION_ORDER {
+    IO_LINEAR,
+    IO_QUADRATIC,
+
+    IO_COUNT
+  };
+
   enum BOUNDARY_TYPE {
     BT_CIRCLE,
     BT_BOX,
@@ -148,17 +155,35 @@ class FluidSim {
   std::vector<double> pressure;
 
   Vector2s get_velocity_and_affine_matrix_with_order(
-      const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER order,
-      Matrix2s* affine_matrix);
+      const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
+      FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix);
+  Vector2s get_saved_velocity_with_order(const Vector2s& position,
+                                         FluidSim::INTERPOLATION_ORDER i_order);
+
+  /*! Quadratic interpolation kernels */
+  Vector2s get_velocity_quadratic_impl(const Vector2s& position,
+                                       const Array2s& uu, const Array2s& vv);
+  Matrix2s get_affine_matrix_quadratic_impl(const Vector2s& position,
+                                            const Array2s& uu,
+                                            const Array2s& vv);
+  Vector2s get_velocity_quadratic(const Vector2s& position);
+  Matrix2s get_affine_matrix_quadratic(const Vector2s& position);
+  Vector2s get_saved_velocity_quadratic(const Vector2s& position);
+  Matrix2s get_saved_affine_matrix_quadratic(const Vector2s& position);
+
+  /*! Linear interpolation kernels */
   Vector2s get_velocity(const Vector2s& position);
   Matrix2s get_affine_matrix(const Vector2s& position);
-
   Vector2s get_saved_velocity(const Vector2s& position);
   Matrix2s get_saved_affine_matrix(const Vector2s& position);
+
+  /*! Add particle to the system */
   void add_particle(const Particle& position);
 
   /*! P2G scheme */
   void map_p2g();
+  void map_p2g_linear();
+  void map_p2g_quadratic();
 
   /*! FLIP schemes */
   void map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
