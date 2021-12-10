@@ -35,14 +35,14 @@ VO_RK4: Runge Kutta's 4rd-order method
 
 Dependencies
 --------------------
-APIC2D depends on the Eigen libraries (included) as well as GLUT for simple visualization.
+APIC2D depends on the Eigen libraries (included) as well as FreeGLUT for simple visualization.
 
 Compilation
 -----------------
 To compile APIC2D, you'll need CMake on Mac OS X or Linux, or CMake-GUI (https://cmake.org) on Windows.
 
 On Mac OS X or Linux:
-1. make a directory, say, *build*, with *mkdir build*, enter the *build* directory, type *cmake ..*
+1. make a directory, say, *build*, with *mkdir build*, enter the *build* directory, type *cmake ..* (or *cmake -G Xcode ..* to generate Xcode project files on Mac)
 2. Optionally you can adjust the options with *ccmake .*
 3. type *make* to compile the code. For speeding up the compilation process you may use *make -j*.
 
