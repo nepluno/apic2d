@@ -14,7 +14,7 @@ else (OPENGL_FOUND)
 endif (OPENGL_FOUND)
 
 # Locate GLUT
-find_package (FREEGLUT REQUIRED)
+find_package (FreeGLUT REQUIRED)
 if (FREEGLUT_FOUND)
   include_directories (${FREEGLUT_INCLUDE_DIR})
   set (APIC2D_LIBRARIES ${APIC2D_LIBRARIES} ${FREEGLUT_LIBRARIES})
