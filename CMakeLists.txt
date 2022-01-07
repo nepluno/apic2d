@@ -53,5 +53,14 @@ else (EIGEN3_FOUND)
   message (SEND_ERROR "Unable to locate Eigen3")
 endif (EIGEN3_FOUND)
 
+if (WIN32)
+  if(NOT EXISTS ${PROJECT_SOURCE_DIR}/thirdparty/LICENSE)
+    find_package(Git REQUIRED)
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive -- thirdparty
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      COMMAND_ERROR_IS_FATAL ANY)
+  endif ()
+endif ()
+
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory (apic2d)
