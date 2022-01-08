@@ -23,4 +23,7 @@ else ()
 endif ()
 
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
+if (WIN32)
+  add_dependencies (APIC2D DllCopy)
+endif ()
 target_link_libraries (APIC2D ${APIC2D_LIBRARIES} )

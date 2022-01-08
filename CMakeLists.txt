@@ -60,6 +60,13 @@ if (WIN32)
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       COMMAND_ERROR_IS_FATAL ANY)
   endif ()
+
+  add_custom_target(DllCopy ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${PROJECT_SOURCE_DIR}/thirdparty/bin/"
+      "${CMAKE_BINARY_DIR}/apic2d/$<CONFIG>/"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    VERBATIM)
 endif ()
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
