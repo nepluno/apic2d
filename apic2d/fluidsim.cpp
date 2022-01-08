@@ -319,6 +319,14 @@ void FluidSim::add_force(scalar dt) {
   }
 }
 
+scalar FluidSim::compute_cfl() const {
+  scalar max_vel_squared = 0.0;
+  for (const Particle& p : particles_) {
+    max_vel_squared = std::max(max_vel_squared, p.v_.squaredNorm());
+  }
+  return dx_ / sqrt(max_vel_squared);
+}
+
 /*!
   \brief  For extrapolated points, replace the normal component
           of velocity with the object velocity (in this case zero).

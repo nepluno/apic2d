@@ -119,6 +119,7 @@ class FluidSim {
   void init_random_particles();
   void render();
   void render_boundaries(const Boundary& b);
+  scalar compute_cfl() const;
   scalar compute_phi(const Vector2s& pos) const;
   scalar compute_phi(const Vector2s& pos, const Boundary& b) const;
 

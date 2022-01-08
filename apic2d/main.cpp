@@ -29,8 +29,13 @@ using namespace std;
 
 // Try changing the grid resolution
 int grid_resolution = 100;
-scalar timestep = 0.005;
 scalar grid_width = 100.0;
+
+// We fix the refresh rate, and find the maximal available time step
+scalar cfl_number = 3.0;
+scalar refresh_rate = 60.0;
+scalar frame_time = 1.0 / refresh_rate;
+scalar step_limit = 0.005;
 
 FluidSim sim;
 
@@ -75,7 +80,11 @@ int main(int argc, char **argv) {
 void display(void) { sim.render(); }
 
 void timer(int junk) {
-  sim.advance(timestep);
+  scalar max_timestep = std::min(step_limit, sim.compute_cfl() * cfl_number);
+  int num_frames = static_cast<int>(std::ceil(frame_time / max_timestep));
+  scalar timestep = frame_time / static_cast<scalar>(num_frames);
+
+  for (int i = 0; i < num_frames; ++i) sim.advance(timestep);
 
   glutPostRedisplay();
   glutTimerFunc(30, timer, 0);
