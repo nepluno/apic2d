@@ -53,14 +53,11 @@ inline int index_abs_max(const std::vector<double> &x) {
 // inf-norm (maximum absolute value) =========================================
 // technically not part of BLAS, but useful
 
-inline double abs_max(const std::vector<double> &x) {
-  return std::fabs(x[index_abs_max(x)]);
-}
+inline double abs_max(const std::vector<double> &x) { return std::fabs(x[index_abs_max(x)]); }
 
 // saxpy (y=alpha*x+y) =======================================================
 
-inline void add_scaled(double alpha, const std::vector<double> &x,
-                       std::vector<double> &y) {
+inline void add_scaled(double alpha, const std::vector<double> &x, std::vector<double> &y) {
   // cblas_daxpy((int)x.size(), alpha, &x[0], 1, &y[0], 1);
   for (int i = 0; i < x.size(); ++i) y[i] += alpha * x[i];
 }

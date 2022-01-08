@@ -30,9 +30,7 @@ using namespace std;
 
 namespace Gluvi {
 
-Target3D::Target3D(scalar target_[3], scalar dist_, scalar heading_,
-                   scalar pitch_, scalar fovy_, scalar near_clip_factor_,
-                   scalar far_clip_factor_)
+Target3D::Target3D(scalar target_[3], scalar dist_, scalar heading_, scalar pitch_, scalar fovy_, scalar near_clip_factor_, scalar far_clip_factor_)
     : dist(dist_),
       heading(heading_),
       pitch(pitch_),
@@ -109,8 +107,7 @@ void Target3D::return_to_default(void) {
   pitch = default_pitch;
 }
 
-void Target3D::transform_mouse(int x, int y, scalar ray_origin[3],
-                               scalar ray_direction[3]) {
+void Target3D::transform_mouse(int x, int y, scalar ray_origin[3], scalar ray_direction[3]) {
   scalar ch = cos(heading), sh = sin(heading);
   scalar cp = cos(pitch), sp = sin(pitch);
 
@@ -119,8 +116,7 @@ void Target3D::transform_mouse(int x, int y, scalar ray_origin[3],
   ray_origin[2] = target[2] + dist * ch * cp;
 
   scalar scale = 0.5 * tan(fovy) / winheight;
-  scalar camx = (x - 0.5 * winwidth) * scale,
-         camy = (0.5 * winheight - y) * scale,
+  scalar camx = (x - 0.5 * winwidth) * scale, camy = (0.5 * winheight - y) * scale,
          camz = -1.0;  // in camera coordinates, this is ray_direction (but not
                        // normalized)
   // now need to rotate into world space from camera space
@@ -135,9 +131,7 @@ void Target3D::transform_mouse(int x, int y, scalar ray_origin[3],
   ray_origin[2] += near_clip_factor * dist * ray_direction[2];
 
   // normalize direction vector
-  scalar mag = sqrt(ray_direction[0] * ray_direction[0] +
-                    ray_direction[1] * ray_direction[1] +
-                    ray_direction[2] * ray_direction[2]);
+  scalar mag = sqrt(ray_direction[0] * ray_direction[0] + ray_direction[1] * ray_direction[1] + ray_direction[2] * ray_direction[2]);
   ray_direction[0] /= mag;
   ray_direction[1] /= mag;
   ray_direction[2] /= mag;
@@ -156,8 +150,7 @@ void Target3D::gl_transform(void) {
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(fovy, winwidth / (scalar)winheight, near_clip_factor * dist,
-                 far_clip_factor * dist);
+  gluPerspective(fovy, winwidth / (scalar)winheight, near_clip_factor * dist, far_clip_factor * dist);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -165,7 +158,7 @@ void Target3D::gl_transform(void) {
   pos[0] = target[0] - dist * sin(heading) * cos(pitch);
   pos[1] = target[1] - dist * sin(pitch);
   pos[2] = target[2] - dist * cos(heading) * cos(pitch);
-  glTranslatef(0, 0, -dist);  // translate target dist away in the z direction
+  glTranslatef(0, 0, -dist);                  // translate target dist away in the z direction
   glRotatef(-180 / M_PI * pitch, 1, 0, 0);    // rotate pitch in the yz plane
   glRotatef(-180 / M_PI * heading, 0, 1, 0);  // rotate heading in the xz plane
   glTranslatef(-target[0], -target[1],
@@ -173,24 +166,20 @@ void Target3D::gl_transform(void) {
 }
 
 void Target3D::export_rib(ostream &output) {
-  output << "Clipping " << near_clip_factor * dist << " "
-         << far_clip_factor * dist << endl;  // could be more generous here!
+  output << "Clipping " << near_clip_factor * dist << " " << far_clip_factor * dist << endl;  // could be more generous here!
   output << "Projection \"perspective\" \"fov\" " << fovy << endl;
-  output << "ReverseOrientation"
-         << endl;  // RenderMan has a different handedness from OpenGL's default
-  output << "Scale 1 1 -1" << endl;  // so we need to correct for that here
+  output << "ReverseOrientation" << endl;  // RenderMan has a different handedness from OpenGL's default
+  output << "Scale 1 1 -1" << endl;        // so we need to correct for that here
   output << "Translate 0 0 " << -dist << endl;
   output << "Rotate " << -180 / M_PI * pitch << " 1 0 0" << endl;
   output << "Rotate " << -180 / M_PI * heading << " 0 1 0" << endl;
-  output << "Translate " << -target[0] << " " << -target[1] << " " << -target[2]
-         << endl;
+  output << "Translate " << -target[0] << " " << -target[1] << " " << -target[2] << endl;
 }
 
 //=================================================================================
 
-TargetOrtho3D::TargetOrtho3D(scalar target_[3], scalar dist_, scalar heading_,
-                             scalar pitch_, scalar height_factor_,
-                             scalar near_clip_factor_, scalar far_clip_factor_)
+TargetOrtho3D::TargetOrtho3D(scalar target_[3], scalar dist_, scalar heading_, scalar pitch_, scalar height_factor_, scalar near_clip_factor_,
+                             scalar far_clip_factor_)
     : dist(dist_),
       heading(heading_),
       pitch(pitch_),
@@ -267,8 +256,7 @@ void TargetOrtho3D::return_to_default(void) {
   pitch = default_pitch;
 }
 
-void TargetOrtho3D::transform_mouse(int x, int y, scalar ray_origin[3],
-                                    scalar ray_direction[3]) {
+void TargetOrtho3D::transform_mouse(int x, int y, scalar ray_origin[3], scalar ray_direction[3]) {
   // @@@ unimplemented
 }
 
@@ -285,10 +273,8 @@ void TargetOrtho3D::gl_transform(void) {
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  scalar halfheight = 0.5 * height_factor * dist,
-         halfwidth = halfheight * winwidth / (scalar)winheight;
-  glOrtho(-halfwidth, halfwidth, -halfheight, halfheight,
-          near_clip_factor * dist, far_clip_factor * dist);
+  scalar halfheight = 0.5 * height_factor * dist, halfwidth = halfheight * winwidth / (scalar)winheight;
+  glOrtho(-halfwidth, halfwidth, -halfheight, halfheight, near_clip_factor * dist, far_clip_factor * dist);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -296,7 +282,7 @@ void TargetOrtho3D::gl_transform(void) {
   pos[0] = target[0] - dist * sin(heading) * cos(pitch);
   pos[1] = target[1] - dist * sin(pitch);
   pos[2] = target[2] - dist * cos(heading) * cos(pitch);
-  glTranslatef(0, 0, -dist);  // translate target dist away in the z direction
+  glTranslatef(0, 0, -dist);                  // translate target dist away in the z direction
   glRotatef(-180 / M_PI * pitch, 1, 0, 0);    // rotate pitch in the yz plane
   glRotatef(-180 / M_PI * heading, 0, 1, 0);  // rotate heading in the xz plane
   glTranslatef(-target[0], -target[1],
@@ -304,25 +290,21 @@ void TargetOrtho3D::gl_transform(void) {
 }
 
 void TargetOrtho3D::export_rib(ostream &output) {
-  output << "Clipping " << near_clip_factor * dist << " "
-         << far_clip_factor * dist << endl;  // could be more generous here!
+  output << "Clipping " << near_clip_factor * dist << " " << far_clip_factor * dist << endl;  // could be more generous here!
   output << "Projection \"orthographic\"" << endl;
   //@@@ incomplete: need a scaling according to height_factor*dist somewhere in
   // here
-  output << "ReverseOrientation"
-         << endl;  // RenderMan has a different handedness from OpenGL's default
-  output << "Scale 1 1 -1" << endl;  // so we need to correct for that here
+  output << "ReverseOrientation" << endl;  // RenderMan has a different handedness from OpenGL's default
+  output << "Scale 1 1 -1" << endl;        // so we need to correct for that here
   output << "Translate 0 0 " << -dist << endl;
   output << "Rotate " << -180 / M_PI * pitch << " 1 0 0" << endl;
   output << "Rotate " << -180 / M_PI * heading << " 0 1 0" << endl;
-  output << "Translate " << -target[0] << " " << -target[1] << " " << -target[2]
-         << endl;
+  output << "Translate " << -target[0] << " " << -target[1] << " " << -target[2] << endl;
 }
 
 //=================================================================================
 
-PanZoom2D::PanZoom2D(scalar bottom_, scalar left_, scalar height_)
-    : bottom(bottom_), left(left_), height(height_), action_mode(INACTIVE) {
+PanZoom2D::PanZoom2D(scalar bottom_, scalar left_, scalar height_) : bottom(bottom_), left(left_), height(height_), action_mode(INACTIVE) {
   default_bottom = bottom;
   default_left = left;
   default_height = height;
@@ -351,8 +333,7 @@ void PanZoom2D::click(int button, int state, int x, int y) {
           else
             desired_width = winwidth * desired_height / winheight;
           left += 0.5 * (x + clickx) * height / winheight - 0.5 * desired_width;
-          bottom += (winheight - 0.5 * (y + clicky)) * height / winheight -
-                    0.5 * desired_height;
+          bottom += (winheight - 0.5 * (y + clicky)) * height / winheight - 0.5 * desired_height;
           height = desired_height;
         } else {
           // zoom in by some constant factor on the mouse click
@@ -421,19 +402,16 @@ void PanZoom2D::gl_transform(void) {
   glViewport(0, 0, (GLsizei)winwidth, (GLsizei)winheight);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(left, left + (height * winwidth) / winheight, bottom, bottom + height,
-          0, 1);
+  glOrtho(left, left + (height * winwidth) / winheight, bottom, bottom + height, 0, 1);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
 
 void PanZoom2D::export_rib(ostream &output) {
   // no projection matrix
-  output << "Clipping 1 2000"
-         << endl;  // somewhat arbitrary - hopefully this is plenty of space
-  output << "ReverseOrientation"
-         << endl;  // RenderMan has a different handedness from OpenGL's default
-  output << "Scale 1 1 -1" << endl;  // so we need to correct for that here
+  output << "Clipping 1 2000" << endl;     // somewhat arbitrary - hopefully this is plenty of space
+  output << "ReverseOrientation" << endl;  // RenderMan has a different handedness from OpenGL's default
+  output << "Scale 1 1 -1" << endl;        // so we need to correct for that here
   // scale so that smaller dimension gets scaled to size 2
   scalar scalefactor;
   if (winwidth > winheight)
@@ -442,8 +420,7 @@ void PanZoom2D::export_rib(ostream &output) {
     scalefactor = 2.0 / (winwidth * height / winheight);
   output << "Scale " << scalefactor << " " << scalefactor << " 1" << endl;
   // translate so centre of view gets mapped to (0,0,1000)
-  output << "Translate " << -(left + 0.5 * winwidth * height / winheight) << " "
-         << -(bottom + 0.5 * height) << " 1000" << endl;
+  output << "Translate " << -(left + 0.5 * winwidth * height / winheight) << " " << -(bottom + 0.5 * height) << " 1000" << endl;
 }
 
 void PanZoom2D::display_screen(void) {
@@ -466,30 +443,24 @@ StaticText::StaticText(const char *text_) : text(text_) {}
 void StaticText::display(int x, int y) {
   dispx = x;
   dispy = y;
-  width =
-      glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text) +
-      1;
+  width = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text) + 1;
   height = 15;
   glColor3d(0.3, 0.3, 0.3);
   glRasterPos2i(x, y - height + 2);
-  for (int i = 0; text[i] != 0; ++i)
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
+  for (int i = 0; text[i] != 0; ++i) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
   glColor3d(1, 1, 1);
   glRasterPos2i(x + 1, y - height + 3);
-  for (int i = 0; text[i] != 0; ++i)
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
+  for (int i = 0; text[i] != 0; ++i) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
 }
 
 //=================================================================================
 
-Button::Button(const char *text_, int minwidth_)
-    : status(UNINVOLVED), text(text_), minwidth(minwidth_) {}
+Button::Button(const char *text_, int minwidth_) : status(UNINVOLVED), text(text_), minwidth(minwidth_) {}
 
 void Button::display(int x, int y) {
   dispx = x;
   dispy = y;
-  int textwidth =
-      glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text);
+  int textwidth = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text);
   if (textwidth < minwidth)
     width = minwidth + 24;
   else
@@ -525,21 +496,18 @@ void Button::display(int x, int y) {
     glColor3d(0, 0, 0);
   }
   glRasterPos2i(x + (width - textwidth) / 2, y - height + 5);
-  for (int i = 0; text[i] != 0; ++i)
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
+  for (int i = 0; text[i] != 0; ++i) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
 }
 
 bool Button::click(int state, int x, int y) {
-  if (state == GLUT_DOWN && x > dispx && x <= dispx + width && y < dispy - 2 &&
-      y >= dispy - height) {
+  if (state == GLUT_DOWN && x > dispx && x <= dispx + width && y < dispy - 2 && y >= dispy - height) {
     status = HIGHLIGHTED;
     glutPostRedisplay();
     return true;
   } else if (state == GLUT_UP && status != UNINVOLVED) {
     status = UNINVOLVED;
     glutPostRedisplay();
-    if (x >= dispx && x < dispx + width && y < dispy - 2 && y >= dispy - height)
-      action();
+    if (x >= dispx && x < dispx + width && y < dispy - 2 && y >= dispy - height) action();
     return true;
   } else
     return false;
@@ -547,12 +515,10 @@ bool Button::click(int state, int x, int y) {
 
 void Button::drag(int x, int y) {
   // needs to control highlighting (SELECTED vs. HIGHLIGHTED)
-  if (status == SELECTED && x >= dispx && x < dispx + width && y < dispy - 2 &&
-      y >= dispy - height) {
+  if (status == SELECTED && x >= dispx && x < dispx + width && y < dispy - 2 && y >= dispy - height) {
     status = HIGHLIGHTED;
     glutPostRedisplay();
-  } else if (status == HIGHLIGHTED && !(x >= dispx && x < dispx + width &&
-                                        y < dispy - 2 && y >= dispy - height)) {
+  } else if (status == HIGHLIGHTED && !(x >= dispx && x < dispx + width && y < dispy - 2 && y >= dispy - height)) {
     status = SELECTED;
     glutPostRedisplay();
   }
@@ -561,28 +527,21 @@ void Button::drag(int x, int y) {
 //=================================================================================
 
 Slider::Slider(const char *text_, int length_, int position_, int justify_)
-    : status(UNINVOLVED),
-      text(text_),
-      length(length_),
-      justify(justify_),
-      position(position_) {}
+    : status(UNINVOLVED), text(text_), length(length_), justify(justify_), position(position_) {}
 
 void Slider::display(int x, int y) {
   dispx = x;
   dispy = y;
-  width =
-      glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text);
+  width = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text);
   if (width < justify) width = justify;
   width += 11 + 6 + length + 1;
   height = 15;
   glColor3d(0.3, 0.3, 0.3);
   glRasterPos2i(x, y - height + 2);
-  for (int i = 0; text[i] != 0; ++i)
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
+  for (int i = 0; text[i] != 0; ++i) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
   glColor3d(1, 1, 1);
   glRasterPos2i(x + 1, y - height + 3);
-  for (int i = 0; text[i] != 0; ++i)
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
+  for (int i = 0; text[i] != 0; ++i) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
   scrollxmin = x + width - length - 12;
   scrollxmax = x + width;
   scrollymin = y - height + 1;
@@ -628,9 +587,7 @@ void Slider::display(int x, int y) {
 }
 
 bool Slider::click(int state, int x, int y) {
-  if (state == GLUT_DOWN && x > scrollxmin + position + 2 &&
-      x <= scrollxmin + position + 11 && y < scrollymax - 1 &&
-      y >= scrollymin + 2) {
+  if (state == GLUT_DOWN && x > scrollxmin + position + 2 && x <= scrollxmin + position + 11 && y < scrollymax - 1 && y >= scrollymin + 2) {
     status = SELECTED;
     clickx = x;
     glutPostRedisplay();
@@ -665,8 +622,7 @@ void Slider::drag(int x, int y) {
 
 //=================================================================================
 
-WidgetList::WidgetList(int indent_, bool hidden_)
-    : indent(indent_), hidden(hidden_), downclicked_member(-1) {}
+WidgetList::WidgetList(int indent_, bool hidden_) : indent(indent_), hidden(hidden_), downclicked_member(-1) {}
 
 void WidgetList::display(int x, int y) {
   dispx = x;
@@ -678,8 +634,7 @@ void WidgetList::display(int x, int y) {
     for (unsigned int i = 0; i < list.size(); ++i) {
       list[i]->display(x + indent, y - height);
       height += list[i]->height;
-      width =
-          (width < indent + list[i]->width) ? indent + list[i]->width : width;
+      width = (width < indent + list[i]->width) ? indent + list[i]->width : width;
     }
   }
 }
@@ -764,8 +719,7 @@ static void gluviMouse(int button, int state, int x, int y) {
     if (camera && mods == 0) {
       camera->click(button, state, x, y);
       mouse_owner = CAMERA;
-    } else if (button == GLUT_LEFT_BUTTON &&
-               root.click(state, x, winheight - y)) {
+    } else if (button == GLUT_LEFT_BUTTON && root.click(state, x, winheight - y)) {
       mouse_owner = WIDGETS;
     } else if (userMouseFunc) {
       userMouseFunc(button, state, x, y);
@@ -824,12 +778,9 @@ void ppm_screenshot(const char *filename_format, ...) {
   if (!out) return;
   GLubyte *image_buffer = new GLubyte[3 * winwidth * winheight];
   glReadBuffer(GL_FRONT);
-  glReadPixels(0, 0, winwidth, winheight, GL_RGB, GL_UNSIGNED_BYTE,
-               image_buffer);
+  glReadPixels(0, 0, winwidth, winheight, GL_RGB, GL_UNSIGNED_BYTE, image_buffer);
   out << "P6\n" << winwidth << ' ' << winheight << " 255\n";
-  for (int i = 1; i <= winheight; ++i)
-    out.write((const char *)image_buffer + 3 * winwidth * (winheight - i),
-              3 * winwidth);
+  for (int i = 1; i <= winheight; ++i) out.write((const char *)image_buffer + 3 * winwidth * (winheight - i), 3 * winwidth);
   delete[] image_buffer;
 }
 
@@ -860,10 +811,9 @@ void sgi_screenshot(const char *filename_format, ...) {
 #endif
   if (!output) return;
   // first write the SGI header
-  write_big_endian_ushort(
-      output, 474);  // magic number to identify this as an SGI image file
-  output.put(0);     // uncompressed
-  output.put(1);     // use 8-bit colour depth
+  write_big_endian_ushort(output, 474);        // magic number to identify this as an SGI image file
+  output.put(0);                               // uncompressed
+  output.put(1);                               // use 8-bit colour depth
   write_big_endian_ushort(output, 3);          // number of dimensions
   write_big_endian_ushort(output, winwidth);   // x size
   write_big_endian_ushort(output, winheight);  // y size
@@ -880,14 +830,11 @@ void sgi_screenshot(const char *filename_format, ...) {
   // now write the SGI image data
   GLubyte *image_buffer = new GLubyte[winwidth * winheight];
   glReadBuffer(GL_FRONT);
-  glReadPixels(0, 0, winwidth, winheight, GL_RED, GL_UNSIGNED_BYTE,
-               image_buffer);
+  glReadPixels(0, 0, winwidth, winheight, GL_RED, GL_UNSIGNED_BYTE, image_buffer);
   output.write((const char *)image_buffer, winwidth * winheight);
-  glReadPixels(0, 0, winwidth, winheight, GL_GREEN, GL_UNSIGNED_BYTE,
-               image_buffer);
+  glReadPixels(0, 0, winwidth, winheight, GL_GREEN, GL_UNSIGNED_BYTE, image_buffer);
   output.write((const char *)image_buffer, winwidth * winheight);
-  glReadPixels(0, 0, winwidth, winheight, GL_BLUE, GL_UNSIGNED_BYTE,
-               image_buffer);
+  glReadPixels(0, 0, winwidth, winheight, GL_BLUE, GL_UNSIGNED_BYTE, image_buffer);
   output.write((const char *)image_buffer, winwidth * winheight);
   delete[] image_buffer;
 #ifndef _MSC_VER
@@ -964,8 +911,7 @@ void set_matte_material(scalar r, scalar g, scalar b, GLenum face) {
  * Draw a vector in 3D.  If arrow_head_length not specified, set it to 10% of
  * vector length. Mar 29, 2006
  */
-void draw_3d_arrow(const scalar base[3], const scalar point[3],
-                   scalar arrow_head_length) {
+void draw_3d_arrow(const scalar base[3], const scalar point[3], scalar arrow_head_length) {
   // glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT|GL_LINE_BIT);
   // glDisable(GL_LIGHTING);
   glLineWidth(1);
@@ -1013,8 +959,7 @@ void draw_3d_arrow(const scalar base[3], const scalar point[3],
 // draw_2d_arrow assumptions:
 // line width, point size, and color are set by the user prior to calling the
 // routine
-void draw_2d_arrow(const Vector2s base, const Vector2s point,
-                   scalar arrow_head_length) {
+void draw_2d_arrow(const Vector2s base, const Vector2s point, scalar arrow_head_length) {
   // glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT|GL_LINE_BIT);
   // glDisable(GL_LIGHTING);
 

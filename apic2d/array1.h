@@ -139,8 +139,7 @@ struct Array1 {
     for (unsigned long i = 0; i < n; ++i) data[i] = value;
   }
 
-  Array1(unsigned long n_, const T& value, unsigned long max_n_)
-      : n(0), max_n(0), data(0) {
+  Array1(unsigned long n_, const T& value, unsigned long max_n_) : n(0), max_n(0), data(0) {
     assert(n_ <= max_n_);
     if (max_n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
     data = (T*)std::calloc(max_n_, sizeof(T));
@@ -160,8 +159,7 @@ struct Array1 {
     std::memcpy(data, data_, n * sizeof(T));
   }
 
-  Array1(unsigned long n_, const T* data_, unsigned long max_n_)
-      : n(0), max_n(0), data(0) {
+  Array1(unsigned long n_, const T* data_, unsigned long max_n_) : n(0), max_n(0), data(0) {
     assert(n_ <= max_n_);
     if (max_n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
     data = (T*)std::calloc(max_n_, sizeof(T));
@@ -387,9 +385,7 @@ struct Array1 {
   }
 
   void grow(void) {
-    unsigned long new_size =
-        (max_n * sizeof(T) < ULONG_MAX / 2 ? 2 * max_n + 1
-                                           : ULONG_MAX / sizeof(T));
+    unsigned long new_size = (max_n * sizeof(T) < ULONG_MAX / 2 ? 2 * max_n + 1 : ULONG_MAX / sizeof(T));
     T* new_data = (T*)std::realloc(data, new_size * sizeof(T));
     if (!new_data) throw std::bad_alloc();
     data = new_data;
@@ -417,15 +413,11 @@ struct Array1 {
 
   reverse_iterator rbegin(void) { return reverse_iterator(end()); }
 
-  const_reverse_iterator rbegin(void) const {
-    return const_reverse_iterator(end());
-  }
+  const_reverse_iterator rbegin(void) const { return const_reverse_iterator(end()); }
 
   reverse_iterator rend(void) { return reverse_iterator(begin()); }
 
-  const_reverse_iterator rend(void) const {
-    return const_reverse_iterator(begin());
-  }
+  const_reverse_iterator rend(void) const { return const_reverse_iterator(begin()); }
 
   void reserve(unsigned long r) {
     if (r > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
@@ -510,12 +502,9 @@ struct WrapArray1 {
 
   WrapArray1(void) : n(0), max_n(0), data(0) {}
 
-  WrapArray1(unsigned long n_, T* data_) : n(n_), max_n(n_), data(data_) {
-    assert(data || max_n == 0);
-  }
+  WrapArray1(unsigned long n_, T* data_) : n(n_), max_n(n_), data(data_) { assert(data || max_n == 0); }
 
-  WrapArray1(unsigned long n_, T* data_, unsigned long max_n_)
-      : n(n_), max_n(max_n_), data(data_) {
+  WrapArray1(unsigned long n_, T* data_, unsigned long max_n_) : n(n_), max_n(max_n_), data(data_) {
     assert(n <= max_n);
     assert(data || max_n == 0);
   }
@@ -526,8 +515,7 @@ struct WrapArray1 {
 
   WrapArray1(Array1<T>& a) : n(a.n), max_n(a.max_n), data(a.data) {}
 
-  WrapArray1(std::vector<T>& a)
-      : n(a.size()), max_n(a.capacity()), data(&a[0]) {}
+  WrapArray1(std::vector<T>& a) : n(a.size()), max_n(a.capacity()), data(&a[0]) {}
 
   void init(unsigned long n_, T* data_, unsigned long max_n_) {
     assert(n_ <= max_n_);
@@ -726,15 +714,11 @@ struct WrapArray1 {
 
   reverse_iterator rbegin(void) { return reverse_iterator(end()); }
 
-  const_reverse_iterator rbegin(void) const {
-    return const_reverse_iterator(end());
-  }
+  const_reverse_iterator rbegin(void) const { return const_reverse_iterator(end()); }
 
   reverse_iterator rend(void) { return reverse_iterator(begin()); }
 
-  const_reverse_iterator rend(void) const {
-    return const_reverse_iterator(begin());
-  }
+  const_reverse_iterator rend(void) const { return const_reverse_iterator(begin()); }
 
   void reserve(unsigned long r) { assert(r <= max_n); }
 

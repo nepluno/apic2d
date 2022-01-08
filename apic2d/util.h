@@ -228,8 +228,7 @@ inline T smooth_step(T r) {
 // only makes sense with T=float or double
 template <class T>
 inline T smooth_step(T r, T r_lower, T r_upper, T value_lower, T value_upper) {
-  return value_lower + smooth_step((r - r_lower) / (r_upper - r_lower)) *
-                           (value_upper - value_lower);
+  return value_lower + smooth_step((r - r_lower) / (r_upper - r_lower)) * (value_upper - value_lower);
 }
 
 // only makes sense with T=float or double
@@ -282,20 +281,12 @@ inline unsigned int unhash(unsigned int h) {
 }
 
 // returns repeatable stateless pseudo-random number in [0,1]
-inline double randhashd(unsigned int seed) {
-  return randhash(seed) / (double)UINT_MAX;
-}
-inline float randhashf(unsigned int seed) {
-  return randhash(seed) / (float)UINT_MAX;
-}
+inline double randhashd(unsigned int seed) { return randhash(seed) / (double)UINT_MAX; }
+inline float randhashf(unsigned int seed) { return randhash(seed) / (float)UINT_MAX; }
 
 // returns repeatable stateless pseudo-random number in [a,b]
-inline double randhashd(unsigned int seed, double a, double b) {
-  return (b - a) * randhash(seed) / (double)UINT_MAX + a;
-}
-inline float randhashf(unsigned int seed, float a, float b) {
-  return ((b - a) * randhash(seed) / (float)UINT_MAX + a);
-}
+inline double randhashd(unsigned int seed, double a, double b) { return (b - a) * randhash(seed) / (double)UINT_MAX + a; }
+inline float randhashf(unsigned int seed, float a, float b) { return ((b - a) * randhash(seed) / (float)UINT_MAX + a); }
 
 inline int intlog2(int x) {
   int exp = -1;
@@ -326,41 +317,27 @@ inline S lerp(const S& value0, const S& value1, T f) {
 }
 
 template <class S, class T>
-inline S bilerp(const S& v00, const S& v10, const S& v01, const S& v11, T fx,
-                T fy) {
+inline S bilerp(const S& v00, const S& v10, const S& v01, const S& v11, T fx, T fy) {
   return lerp(lerp(v00, v10, fx), lerp(v01, v11, fx), fy);
 }
 
 template <class T>
-inline Eigen::Matrix<T, 2, 1> grad_bilerp(const T& v00, const T& v10,
-                                          const T& v01, const T& v11, T fx,
-                                          T fy) {
-  return Eigen::Matrix<T, 2, 1>(fy - 1.0, fx - 1.0) * v00 +
-         Eigen::Matrix<T, 2, 1>(1.0 - fy, -fx) * v10 +
-         Eigen::Matrix<T, 2, 1>(-fy, 1.0 - fx) * v01 +
+inline Eigen::Matrix<T, 2, 1> grad_bilerp(const T& v00, const T& v10, const T& v01, const T& v11, T fx, T fy) {
+  return Eigen::Matrix<T, 2, 1>(fy - 1.0, fx - 1.0) * v00 + Eigen::Matrix<T, 2, 1>(1.0 - fy, -fx) * v10 + Eigen::Matrix<T, 2, 1>(-fy, 1.0 - fx) * v01 +
          Eigen::Matrix<T, 2, 1>(fy, fx) * v11;
 }
 
 template <class S, class T>
-inline S trilerp(const S& v000, const S& v100, const S& v010, const S& v110,
-                 const S& v001, const S& v101, const S& v011, const S& v111,
-                 T fx, T fy, T fz) {
-  return lerp(bilerp(v000, v100, v010, v110, fx, fy),
-              bilerp(v001, v101, v011, v111, fx, fy), fz);
+inline S trilerp(const S& v000, const S& v100, const S& v010, const S& v110, const S& v001, const S& v101, const S& v011, const S& v111, T fx, T fy, T fz) {
+  return lerp(bilerp(v000, v100, v010, v110, fx, fy), bilerp(v001, v101, v011, v111, fx, fy), fz);
 }
 
 template <class S, class T>
-inline S quadlerp(const S& v0000, const S& v1000, const S& v0100,
-                  const S& v1100, const S& v0010, const S& v1010,
-                  const S& v0110, const S& v1110, const S& v0001,
-                  const S& v1001, const S& v0101, const S& v1101,
-                  const S& v0011, const S& v1011, const S& v0111,
-                  const S& v1111, T fx, T fy, T fz, T ft) {
-  return lerp(trilerp(v0000, v1000, v0100, v1100, v0010, v1010, v0110, v1110,
-                      fx, fy, fz),
-              trilerp(v0001, v1001, v0101, v1101, v0011, v1011, v0111, v1111,
-                      fx, fy, fz),
-              ft);
+inline S quadlerp(const S& v0000, const S& v1000, const S& v0100, const S& v1100, const S& v0010, const S& v1010, const S& v0110, const S& v1110,
+                  const S& v0001, const S& v1001, const S& v0101, const S& v1101, const S& v0011, const S& v1011, const S& v0111, const S& v1111, T fx, T fy,
+                  T fz, T ft) {
+  return lerp(trilerp(v0000, v1000, v0100, v1100, v0010, v1010, v0110, v1110, fx, fy, fz),
+              trilerp(v0001, v1001, v0101, v1101, v0011, v1011, v0111, v1111, fx, fy, fz), ft);
 }
 
 // f should be between 0 and 1, with f=0.5 corresponding to balanced weighting
@@ -384,8 +361,7 @@ inline void cubic_interp_weights(T f, T& wneg1, T& w0, T& w1, T& w2) {
 }
 
 template <class S, class T>
-inline S cubic_interp(const S& value_neg1, const S& value0, const S& value1,
-                      const S& value2, T f) {
+inline S cubic_interp(const S& value_neg1, const S& value0, const S& value1, const S& value2, T f) {
   T wneg1, w0, w1, w2;
   cubic_interp_weights(f, wneg1, w0, w1, w2);
   return wneg1 * value_neg1 + w0 * value0 + w1 * value1 + w2 * value2;
@@ -422,8 +398,7 @@ void add_unique(std::vector<T>& a, T e) {
 template <class T>
 void insert(std::vector<T>& a, unsigned int index, T e) {
   a.push_back(a.back());
-  for (unsigned int i = (unsigned int)a.size() - 1; i > index; --i)
-    a[i] = a[i - 1];
+  for (unsigned int i = (unsigned int)a.size() - 1; i > index; --i) a[i] = a[i - 1];
   a[index] = e;
 }
 
@@ -461,8 +436,7 @@ void find_and_erase_unordered(std::vector<T>& a, const T& doomed_element) {
 }
 
 template <class T>
-void replace_once(std::vector<T>& a, const T& old_element,
-                  const T& new_element) {
+void replace_once(std::vector<T>& a, const T& old_element, const T& new_element) {
   for (unsigned int i = 0; i < a.size(); ++i)
     if (a[i] == old_element) {
       a[i] = new_element;
@@ -471,9 +445,7 @@ void replace_once(std::vector<T>& a, const T& old_element,
 }
 
 template <class T>
-void write_matlab(std::ostream& output, const std::vector<T>& a,
-                  const char* variable_name, bool column_vector = true,
-                  int significant_digits = 18) {
+void write_matlab(std::ostream& output, const std::vector<T>& a, const char* variable_name, bool column_vector = true, int significant_digits = 18) {
   output << variable_name << "=[";
   std::streamsize old_precision = output.precision();
   output.precision(significant_digits);

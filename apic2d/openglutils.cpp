@@ -73,8 +73,7 @@ void draw_box2d(const Vector2s& origin, scalar width, scalar height) {
   glEnd();
 }
 
-void draw_segmentset2d(const std::vector<Vector2s>& vertices,
-                       const std::vector<Vector2i>& edges) {
+void draw_segmentset2d(const std::vector<Vector2s>& vertices, const std::vector<Vector2i>& edges) {
   glBegin(GL_LINES);
   for (unsigned int i = 0; i < edges.size(); ++i) {
     glVertex2dv(vertices[edges[i][0]].data());
@@ -93,16 +92,13 @@ void draw_points2d(const std::vector<Vector2s>& points) {
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices) {
   glBegin(GL_POLYGON);
-  for (unsigned int i = 0; i < vertices.size(); ++i)
-    glVertex2dv(vertices[i].data());
+  for (unsigned int i = 0; i < vertices.size(); ++i) glVertex2dv(vertices[i].data());
   glEnd();
 }
 
-void draw_polygon2d(const std::vector<Vector2s>& vertices,
-                    const std::vector<int>& order) {
+void draw_polygon2d(const std::vector<Vector2s>& vertices, const std::vector<int>& order) {
   glBegin(GL_POLYGON);
-  for (unsigned int i = 0; i < order.size(); ++i)
-    glVertex2dv(vertices[order[i]].data());
+  for (unsigned int i = 0; i < order.size(); ++i) glVertex2dv(vertices[order[i]].data());
   glEnd();
 }
 void draw_segment2d(const Vector2s& start, const Vector2s& end) {
@@ -112,8 +108,7 @@ void draw_segment2d(const Vector2s& start, const Vector2s& end) {
   glEnd();
 }
 
-void draw_arrow2d(const Vector2s& start, const Vector2s& end,
-                  scalar arrow_head_len) {
+void draw_arrow2d(const Vector2s& start, const Vector2s& end, scalar arrow_head_len) {
   Vector2s direction = end - start;
 
   Vector2s dir_norm = direction;
@@ -125,10 +120,8 @@ void draw_arrow2d(const Vector2s& start, const Vector2s& end,
   dir_norm.normalize();
   Vector2s perp(dir_norm[1], -dir_norm[0]);
 
-  Vector2s tip_left =
-      end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm + perp);
-  Vector2s tip_right =
-      end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm - perp);
+  Vector2s tip_left = end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm + perp);
+  Vector2s tip_right = end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm - perp);
 
   glBegin(GL_LINES);
   glVertex2dv(start.data());
@@ -140,8 +133,7 @@ void draw_arrow2d(const Vector2s& start, const Vector2s& end,
   glEnd();
 }
 
-void draw_trimesh2d(const std::vector<Vector2s>& vertices,
-                    const std::vector<Vector3i>& tris) {
+void draw_trimesh2d(const std::vector<Vector2s>& vertices, const std::vector<Vector3i>& tris) {
   glBegin(GL_TRIANGLES);
   for (unsigned int i = 0; i < tris.size(); ++i) {
     glVertex2dv(vertices[tris[i][0]].data());
@@ -151,8 +143,7 @@ void draw_trimesh2d(const std::vector<Vector2s>& vertices,
   glEnd();
 }
 
-void hueToRGB(scalar hue, scalar sat, scalar val, scalar& r, scalar& g,
-              scalar& b) {
+void hueToRGB(scalar hue, scalar sat, scalar val, scalar& r, scalar& g, scalar& b) {
   // compute hue (adapted from an older Wikipedia article)
   int Hi = (int)(floor(hue / 60.0f)) % 6;
   scalar f = hue / 60 - Hi;
@@ -209,8 +200,7 @@ void draw_grid_data2d(Array2s& data, Vector2s origin, scalar dx, bool color) {
       Vector2s bl = origin + Vector2s(i * dx, j * dx);
       scalar r, g, b;
       if (color) {
-        hueToRGB(240 * (data(i, j) - min_val) / (max_val - min_val), 1, 1, r, g,
-                 b);
+        hueToRGB(240 * (data(i, j) - min_val) / (max_val - min_val), 1, 1, r, g, b);
       } else {
         scalar gray = (data(i, j) - min_val) / (max_val - min_val);
         r = g = b = gray;
@@ -222,8 +212,7 @@ void draw_grid_data2d(Array2s& data, Vector2s origin, scalar dx, bool color) {
   }
 }
 
-void draw_trimesh3d(const std::vector<Vector3s>& vertices,
-                    const std::vector<Vector3i>& tris) {
+void draw_trimesh3d(const std::vector<Vector3s>& vertices, const std::vector<Vector3i>& tris) {
   glBegin(GL_TRIANGLES);
   for (unsigned int i = 0; i < tris.size(); ++i) {
     glVertex3dv(vertices[tris[i][0]].data());
@@ -233,9 +222,7 @@ void draw_trimesh3d(const std::vector<Vector3s>& vertices,
   glEnd();
 }
 
-void draw_trimesh3d(const std::vector<Vector3s>& vertices,
-                    const std::vector<Vector3i>& tris,
-                    const std::vector<Vector3s>& normals) {
+void draw_trimesh3d(const std::vector<Vector3s>& vertices, const std::vector<Vector3i>& tris, const std::vector<Vector3s>& normals) {
   glBegin(GL_TRIANGLES);
   for (unsigned int i = 0; i < tris.size(); ++i) {
     glNormal3dv(normals[tris[i][0]].data());

@@ -47,36 +47,20 @@ struct Array2 {
 
   Array2(void) : ni(0), nj(0) {}
 
-  Array2(int ni_, int nj_) : ni(ni_), nj(nj_), a(ni_ * nj_) {
-    assert(ni_ >= 0 && nj >= 0);
-  }
+  Array2(int ni_, int nj_) : ni(ni_), nj(nj_), a(ni_ * nj_) { assert(ni_ >= 0 && nj >= 0); }
 
-  Array2(int ni_, int nj_, ArrayT& a_) : ni(ni_), nj(nj_), a(a_) {
-    assert(ni_ >= 0 && nj >= 0);
-  }
+  Array2(int ni_, int nj_, ArrayT& a_) : ni(ni_), nj(nj_), a(a_) { assert(ni_ >= 0 && nj >= 0); }
 
-  Array2(int ni_, int nj_, const T& value)
-      : ni(ni_), nj(nj_), a(ni_ * nj_, value) {
-    assert(ni_ >= 0 && nj >= 0);
-  }
+  Array2(int ni_, int nj_, const T& value) : ni(ni_), nj(nj_), a(ni_ * nj_, value) { assert(ni_ >= 0 && nj >= 0); }
 
-  Array2(int ni_, int nj_, const T& value, size_type max_n_)
-      : ni(ni_), nj(nj_), a(ni_ * nj_, value, max_n_) {
-    assert(ni_ >= 0 && nj >= 0);
-  }
+  Array2(int ni_, int nj_, const T& value, size_type max_n_) : ni(ni_), nj(nj_), a(ni_ * nj_, value, max_n_) { assert(ni_ >= 0 && nj >= 0); }
 
-  Array2(int ni_, int nj_, T* data_) : ni(ni_), nj(nj_), a(ni_ * nj_, data_) {
-    assert(ni_ >= 0 && nj >= 0);
-  }
+  Array2(int ni_, int nj_, T* data_) : ni(ni_), nj(nj_), a(ni_ * nj_, data_) { assert(ni_ >= 0 && nj >= 0); }
 
-  Array2(int ni_, int nj_, T* data_, size_type max_n_)
-      : ni(ni_), nj(nj_), a(ni_ * nj_, data_, max_n_) {
-    assert(ni_ >= 0 && nj >= 0);
-  }
+  Array2(int ni_, int nj_, T* data_, size_type max_n_) : ni(ni_), nj(nj_), a(ni_ * nj_, data_, max_n_) { assert(ni_ >= 0 && nj >= 0); }
 
   template <class OtherArrayT>
-  Array2(Array2<T, OtherArrayT>& other)
-      : ni(other.ni), nj(other.nj), a(other.a) {}
+  Array2(Array2<T, OtherArrayT>& other) : ni(other.ni), nj(other.nj), a(other.a) {}
 
   ~Array2(void) {
 #ifndef NDEBUG
@@ -94,13 +78,9 @@ struct Array2 {
     return a[i + ni * j];
   }
 
-  bool operator==(const Array2<T>& x) const {
-    return ni == x.ni && nj == x.nj && a == x.a;
-  }
+  bool operator==(const Array2<T>& x) const { return ni == x.ni && nj == x.nj && a == x.a; }
 
-  bool operator!=(const Array2<T>& x) const {
-    return ni != x.ni || nj != x.nj || a != x.a;
-  }
+  bool operator!=(const Array2<T>& x) const { return ni != x.ni || nj != x.nj || a != x.a; }
 
   bool operator<(const Array2<T>& x) const {
     if (ni < x.ni)
@@ -221,19 +201,13 @@ struct Array2 {
 
   reverse_iterator rbegin(void) { return reverse_iterator(end()); }
 
-  const_reverse_iterator rbegin(void) const {
-    return const_reverse_iterator(end());
-  }
+  const_reverse_iterator rbegin(void) const { return const_reverse_iterator(end()); }
 
   reverse_iterator rend(void) { return reverse_iterator(begin()); }
 
-  const_reverse_iterator rend(void) const {
-    return const_reverse_iterator(begin());
-  }
+  const_reverse_iterator rend(void) const { return const_reverse_iterator(begin()); }
 
-  void reserve(int reserve_ni, int reserve_nj) {
-    a.reserve(reserve_ni * reserve_nj);
-  }
+  void reserve(int reserve_ni, int reserve_nj) { a.reserve(reserve_ni * reserve_nj); }
 
   void resize(int ni_, int nj_) {
     assert(ni_ >= 0 && nj_ >= 0);
@@ -279,8 +253,7 @@ typedef Array2<scalar, WrapArray1<scalar> > WrapArray2s;
 typedef Array2<double, WrapArray1<double> > WrapArray2d;
 typedef Array2<float, WrapArray1<float> > WrapArray2f;
 typedef Array2<long long, WrapArray1<long long> > WrapArray2ll;
-typedef Array2<unsigned long long, WrapArray1<unsigned long long> >
-    WrapArray2ull;
+typedef Array2<unsigned long long, WrapArray1<unsigned long long> > WrapArray2ull;
 typedef Array2<int, WrapArray1<int> > WrapArray2i;
 typedef Array2<unsigned int, WrapArray1<unsigned int> > WrapArray2ui;
 typedef Array2<unsigned short, WrapArray1<unsigned short> > WrapArray2us;

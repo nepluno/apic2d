@@ -18,8 +18,8 @@
 
 #include <vector>
 
-#include "math_defs.h"
 #include "array2.h"
+#include "math_defs.h"
 #include "pcgsolver/pcg_solver.h"
 
 class sorter;
@@ -27,8 +27,7 @@ class sorter;
 enum ParticleType { PT_LIQUID, PT_SOLID };
 
 struct Particle {
-  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii,
-           ParticleType type);
+  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, ParticleType type);
   Particle();
   Particle(const Particle&);
 
@@ -92,8 +91,7 @@ class FluidSim {
   };
 
   struct Boundary {
-    Boundary(const Vector2s& center_, const Vector2s& parameter_,
-             BOUNDARY_TYPE type_, bool inside);
+    Boundary(const Vector2s& center_, const Vector2s& parameter_, BOUNDARY_TYPE type_, bool inside);
 
     Boundary(Boundary* op0_, Boundary* op1_, BOUNDARY_TYPE type_);
 
@@ -107,10 +105,8 @@ class FluidSim {
     scalar sign_;
   };
 
-  void initialize(const Vector2s& origin_, scalar width, int ni_, int nj_,
-                  scalar rho_, bool draw_grid_ = true,
-                  bool draw_particles_ = true, bool draw_velocities_ = true,
-                  bool draw_boundaries_ = true);
+  void initialize(const Vector2s& origin_, scalar width, int ni_, int nj_, scalar rho_, bool draw_grid_ = true, bool draw_particles_ = true,
+                  bool draw_velocities_ = true, bool draw_boundaries_ = true);
   void advance(scalar dt);
   void update_boundary();
   void init_random_particles();
@@ -154,18 +150,13 @@ class FluidSim {
   std::vector<double> rhs_;
   std::vector<double> pressure_;
 
-  Vector2s get_velocity_and_affine_matrix_with_order(
-      const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
-      FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix);
-  Vector2s get_saved_velocity_with_order(const Vector2s& position,
-                                         FluidSim::INTERPOLATION_ORDER i_order);
+  Vector2s get_velocity_and_affine_matrix_with_order(const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
+                                                     FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix);
+  Vector2s get_saved_velocity_with_order(const Vector2s& position, FluidSim::INTERPOLATION_ORDER i_order);
 
   /*! Quadratic interpolation kernels */
-  Vector2s get_velocity_quadratic_impl(const Vector2s& position,
-                                       const Array2s& uu, const Array2s& vv);
-  Matrix2s get_affine_matrix_quadratic_impl(const Vector2s& position,
-                                            const Array2s& uu,
-                                            const Array2s& vv);
+  Vector2s get_velocity_quadratic_impl(const Vector2s& position, const Array2s& uu, const Array2s& vv);
+  Matrix2s get_affine_matrix_quadratic_impl(const Vector2s& position, const Array2s& uu, const Array2s& vv);
   Vector2s get_velocity_quadratic(const Vector2s& position);
   Matrix2s get_affine_matrix_quadratic(const Vector2s& position);
   Vector2s get_saved_velocity_quadratic(const Vector2s& position);
@@ -186,10 +177,8 @@ class FluidSim {
   void map_p2g_quadratic();
 
   /*! FLIP schemes */
-  void map_g2p_flip_general(float dt, const scalar lagrangian_ratio,
-                             const scalar lagrangian_symplecticity,
-                             const scalar affine_stretching_ratio,
-                             const scalar affine_rotational_ratio);
+  void map_g2p_flip_general(float dt, const scalar lagrangian_ratio, const scalar lagrangian_symplecticity, const scalar affine_stretching_ratio,
+                            const scalar affine_rotational_ratio);
 
   void save_velocity();
 
@@ -203,13 +192,9 @@ class FluidSim {
   bool draw_boundaries_;
 
  protected:
-  inline scalar circle_phi(const Vector2s& position, const Vector2s& centre,
-                           scalar radius) const {
-    return ((position - centre).norm() - radius);
-  }
+  inline scalar circle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const { return ((position - centre).norm() - radius); }
 
-  inline scalar box_phi(const Vector2s& position, const Vector2s& centre,
-                        const Vector2s& expand) const {
+  inline scalar box_phi(const Vector2s& position, const Vector2s& centre, const Vector2s& expand) const {
     scalar dx = fabs(position[0] - centre[0]) - expand[0];
     scalar dy = fabs(position[1] - centre[1]) - expand[1];
     scalar dax = max(dx, 0.0);
@@ -217,46 +202,33 @@ class FluidSim {
     return min(max(dx, dy), 0.0) + sqrt(dax * dax + day * day);
   }
 
-  inline scalar hexagon_phi(const Vector2s& position, const Vector2s& centre,
-                            scalar radius) const {
+  inline scalar hexagon_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const {
     scalar dx = fabs(position[0] - centre[0]);
     scalar dy = fabs(position[1] - centre[1]);
     return max((dx * 0.866025 + dy * 0.5), dy) - radius;
   }
 
-  inline scalar triangle_phi(const Vector2s& position, const Vector2s& centre,
-                             scalar radius) const {
+  inline scalar triangle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const {
     scalar px = position[0] - centre[0];
     scalar py = position[1] - centre[1];
     scalar dx = fabs(px);
     return max(dx * 0.866025 + py * 0.5, -py) - radius * 0.5;
   }
 
-  inline scalar cylinder_phi(const Vector2s& position, const Vector2s& centre,
-                             scalar theta, scalar radius) const {
+  inline scalar cylinder_phi(const Vector2s& position, const Vector2s& centre, scalar theta, scalar radius) const {
     Vector2s nhat = Vector2s(cos(theta), sin(theta));
     Vector2s dx = position - centre;
-    return sqrt(dx.transpose() *
-                (Matrix2s::Identity() - nhat * nhat.transpose()) * dx) -
-           radius;
+    return sqrt(dx.transpose() * (Matrix2s::Identity() - nhat * nhat.transpose()) * dx) - radius;
   }
 
-  inline scalar union_phi(const scalar& d1, const scalar& d2) const {
-    return min(d1, d2);
-  }
+  inline scalar union_phi(const scalar& d1, const scalar& d2) const { return min(d1, d2); }
 
-  inline scalar intersection_phi(const scalar& d1, const scalar& d2) const {
-    return max(d1, d2);
-  }
+  inline scalar intersection_phi(const scalar& d1, const scalar& d2) const { return max(d1, d2); }
 
-  inline scalar substraction_phi(const scalar& d1, const scalar& d2) const {
-    return max(-d1, d2);
-  }
+  inline scalar substraction_phi(const scalar& d1, const scalar& d2) const { return max(-d1, d2); }
 
-  inline scalar torus_phi(const Vector2s& position, const Vector2s& centre,
-                          scalar radius0, scalar radius1) const {
-    return max(-circle_phi(position, centre, radius0),
-               circle_phi(position, centre, radius1));
+  inline scalar torus_phi(const Vector2s& position, const Vector2s& centre, scalar radius0, scalar radius1) const {
+    return max(-circle_phi(position, centre, radius0), circle_phi(position, centre, radius1));
   }
 
   Vector2s trace_rk2(const Vector2s& position, scalar dt);

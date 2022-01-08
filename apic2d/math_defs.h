@@ -29,9 +29,7 @@ struct int_scalar {
   int i;
   scalar v;
 
-  inline bool operator()(const int_scalar& struct1, const int_scalar& struct2) {
-    return (struct1.v < struct2.v);
-  }
+  inline bool operator()(const int_scalar& struct1, const int_scalar& struct2) { return (struct1.v < struct2.v); }
 };
 
 typedef Eigen::Matrix<scalar, 2, 1> Vector2s;

@@ -45,13 +45,12 @@ struct Camera {
   virtual void return_to_default(void) = 0;
   //@@@ add these to be called by a user glutKeyboardFunc() thing so that
   //@@@ cameras can easily add keyboard shortcuts for e.g. return_to_default,
-  //transformation, etc. virtual void navigation_keyboard_handler(unsigned char
+  // transformation, etc. virtual void navigation_keyboard_handler(unsigned char
   // key, int x, int y) = 0; virtual void navigation_special_key_handler(int key,
   // int x, int y) = 0;
   virtual void gl_transform(void) = 0;
   virtual void export_rib(std::ostream &output) = 0;
-  virtual void display_screen(void) {
-  }  // in case the camera needs to show anything on screen
+  virtual void display_screen(void) {}  // in case the camera needs to show anything on screen
 };
 
 struct Target3D : public Camera {
@@ -64,14 +63,12 @@ struct Target3D : public Camera {
   enum { INACTIVE, ROTATE, TRUCK, DOLLY } action_mode;
   int oldmousex, oldmousey;
 
-  Target3D(scalar target_[3] = 0, scalar dist_ = 1, scalar heading_ = 0,
-           scalar pitch_ = 0, scalar fovy_ = 45,
-           scalar near_clip_factor_ = 0.01, scalar far_clip_factor_ = 100);
+  Target3D(scalar target_[3] = 0, scalar dist_ = 1, scalar heading_ = 0, scalar pitch_ = 0, scalar fovy_ = 45, scalar near_clip_factor_ = 0.01,
+           scalar far_clip_factor_ = 100);
   void click(int button, int state, int x, int y);
   void drag(int x, int y);
   void return_to_default(void);
-  void transform_mouse(int x, int y, scalar ray_origin[3],
-                       scalar ray_direction[3]);
+  void transform_mouse(int x, int y, scalar ray_origin[3], scalar ray_direction[3]);
   void get_viewing_direction(scalar direction[3]);
   void gl_transform(void);
   void export_rib(std::ostream &output);
@@ -94,14 +91,12 @@ struct TargetOrtho3D : public Camera {
                   // DIST?
   int oldmousex, oldmousey;
 
-  TargetOrtho3D(scalar target_[3] = 0, scalar dist_ = 1, scalar heading_ = 0,
-                scalar pitch_ = 0, scalar height_factor_ = 1,
-                scalar near_clip_factor_ = 0.01, scalar far_clip_factor_ = 100);
+  TargetOrtho3D(scalar target_[3] = 0, scalar dist_ = 1, scalar heading_ = 0, scalar pitch_ = 0, scalar height_factor_ = 1, scalar near_clip_factor_ = 0.01,
+                scalar far_clip_factor_ = 100);
   void click(int button, int state, int x, int y);
   void drag(int x, int y);
   void return_to_default(void);
-  void transform_mouse(int x, int y, scalar ray_origin[3],
-                       scalar ray_direction[3]);
+  void transform_mouse(int x, int y, scalar ray_origin[3], scalar ray_direction[3]);
   void get_viewing_direction(scalar direction[3]);
   void gl_transform(void);
   void export_rib(std::ostream &output);
@@ -131,9 +126,7 @@ struct Widget {
 
   virtual ~Widget() {}
   virtual void display(int x, int y) = 0;
-  virtual bool click(int state, int x, int y) {
-    return false;
-  }  // returns true if click handled by widget
+  virtual bool click(int state, int x, int y) { return false; }  // returns true if click handled by widget
   virtual void drag(int x, int y) {}
 };
 
@@ -164,8 +157,7 @@ struct Slider : public Widget {
   int scrollxmin, scrollxmax, scrollymin, scrollymax;
   int clickx;
 
-  Slider(const char *text_, int length_ = 100, int position_ = 0,
-         int justify_ = 0);
+  Slider(const char *text_, int length_ = 100, int position_ = 0, int justify_ = 0);
   void display(int x, int y);
   bool click(int state, int x, int y);
   void drag(int x, int y);
@@ -199,15 +191,11 @@ extern void (*userKeyFunc)(unsigned char key, int x, int y);
 void ppm_screenshot(const char *filename_format, ...);
 void sgi_screenshot(const char *filename_format, ...);
 void set_generic_lights(void);
-void set_generic_material(scalar r, scalar g, scalar b,
-                          GLenum face = GL_FRONT_AND_BACK);
-void set_matte_material(scalar r, scalar g, scalar b,
-                        GLenum face = GL_FRONT_AND_BACK);
+void set_generic_material(scalar r, scalar g, scalar b, GLenum face = GL_FRONT_AND_BACK);
+void set_matte_material(scalar r, scalar g, scalar b, GLenum face = GL_FRONT_AND_BACK);
 //@@@@@@@ USEFUL FUNCTIONALITY:
-void draw_3d_arrow(const scalar base[3], const scalar point[3],
-                   scalar arrow_head_length = 0);
-void draw_2d_arrow(const Vector2s base, const Vector2s point,
-                   scalar arrow_head_length);
+void draw_3d_arrow(const scalar base[3], const scalar point[3], scalar arrow_head_length = 0);
+void draw_2d_arrow(const Vector2s base, const Vector2s point, scalar arrow_head_length);
 void draw_coordinate_grid(scalar size = 1, int spacing = 10);
 void draw_text(const scalar point[3], const char *text, int fontsize = 12);
 

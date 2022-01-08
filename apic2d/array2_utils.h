@@ -20,35 +20,29 @@
 #include "util.h"
 
 template <class S, class T>
-T interpolate_value(const Eigen::Matrix<S, 2, 1>& point,
-                    const Array2<T, Array1<T> >& grid) {
+T interpolate_value(const Eigen::Matrix<S, 2, 1>& point, const Array2<T, Array1<T> >& grid) {
   int i, j;
   S fx, fy;
 
   get_barycentric(point[0], i, fx, 0, grid.ni);
   get_barycentric(point[1], j, fy, 0, grid.nj);
 
-  return bilerp(grid(i, j), grid(i + 1, j), grid(i, j + 1), grid(i + 1, j + 1),
-                fx, fy);
+  return bilerp(grid(i, j), grid(i + 1, j), grid(i, j + 1), grid(i + 1, j + 1), fx, fy);
 }
 
 template <class T>
-Eigen::Matrix<T, 2, 1> affine_interpolate_value(
-    const Eigen::Matrix<T, 2, 1>& point, const Array2<T, Array1<T> >& grid) {
+Eigen::Matrix<T, 2, 1> affine_interpolate_value(const Eigen::Matrix<T, 2, 1>& point, const Array2<T, Array1<T> >& grid) {
   int i, j;
   T fx, fy;
 
   get_barycentric(point[0], i, fx, 0, grid.ni);
   get_barycentric(point[1], j, fy, 0, grid.nj);
 
-  return grad_bilerp(grid(i, j), grid(i + 1, j), grid(i, j + 1),
-                     grid(i + 1, j + 1), fx, fy);
+  return grad_bilerp(grid(i, j), grid(i + 1, j), grid(i, j + 1), grid(i + 1, j + 1), fx, fy);
 }
 
 template <class S, class T>
-T interpolate_gradient(Eigen::Matrix<T, 2, 1>& gradient,
-                       const Eigen::Matrix<S, 2, 1>& point,
-                       const Array2<T, Array1<T> >& grid) {
+T interpolate_gradient(Eigen::Matrix<T, 2, 1>& gradient, const Eigen::Matrix<S, 2, 1>& point, const Array2<T, Array1<T> >& grid) {
   int i, j;
   S fx, fy;
   get_barycentric(point[0], i, fx, 0, grid.ni);
@@ -73,8 +67,7 @@ T interpolate_gradient(Eigen::Matrix<T, 2, 1>& gradient,
 }
 
 template <class T>
-void write_matlab_array(std::ostream& output, Array2<T, Array1<T> >& a,
-                        const char* variable_name, bool transpose = false) {
+void write_matlab_array(std::ostream& output, Array2<T, Array1<T> >& a, const char* variable_name, bool transpose = false) {
   output << variable_name << "=[";
   for (int j = 0; j < a.nj; ++j) {
     for (int i = 0; i < a.ni; ++i) {

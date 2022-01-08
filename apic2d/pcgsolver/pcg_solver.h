@@ -34,18 +34,15 @@ namespace robertbridson {
 template <class T>
 struct SparseColumnLowerFactor {
   unsigned int n;
-  std::vector<T> invdiag;  // reciprocals of diagonal elements
-  std::vector<T> value;    // values below the diagonal, listed column by column
-  std::vector<unsigned int>
-      rowindex;  // a list of all row indices, for each column in turn
-  std::vector<unsigned int>
-      colstart;  // where each column begins in rowindex (plus an extra entry at
-                 // the end, of #nonzeros)
-  std::vector<T> adiag;  // just used in factorization: minimum "safe" diagonal
-                         // entry allowed
+  std::vector<T> invdiag;              // reciprocals of diagonal elements
+  std::vector<T> value;                // values below the diagonal, listed column by column
+  std::vector<unsigned int> rowindex;  // a list of all row indices, for each column in turn
+  std::vector<unsigned int> colstart;  // where each column begins in rowindex (plus an extra entry at
+                                       // the end, of #nonzeros)
+  std::vector<T> adiag;                // just used in factorization: minimum "safe" diagonal
+                                       // entry allowed
 
-  explicit SparseColumnLowerFactor(unsigned int n_ = 0)
-      : n(n_), invdiag(n_), colstart(n_ + 1), adiag(n_) {}
+  explicit SparseColumnLowerFactor(unsigned int n_ = 0) : n(n_), invdiag(n_), colstart(n_ + 1), adiag(n_) {}
 
   void clear(void) {
     n = 0;
@@ -99,15 +96,12 @@ struct SparseColumnLowerFactor {
 // instead.
 
 template <class T>
-void factor_modified_incomplete_cholesky0(const SparseMatrix<T> &matrix,
-                                          SparseColumnLowerFactor<T> &factor,
-                                          T modification_parameter = 0.97,
+void factor_modified_incomplete_cholesky0(const SparseMatrix<T> &matrix, SparseColumnLowerFactor<T> &factor, T modification_parameter = 0.97,
                                           T min_diagonal_ratio = 0.25) {
   // first copy lower triangle of matrix into factor (Note: assuming A is
   // symmetric of course!)
   factor.resize(matrix.n);
-  zero(
-      factor.invdiag);  // important: eliminate old values from previous solves!
+  zero(factor.invdiag);  // important: eliminate old values from previous solves!
   factor.value.resize(0);
   factor.rowindex.resize(0);
   zero(factor.adiag);
@@ -145,9 +139,8 @@ void factor_modified_incomplete_cholesky0(const SparseMatrix<T> &matrix,
     if (factor.adiag[k] == 0) continue;  // null row/column
     // figure out the final L(k,k) entry
     if (factor.invdiag[k] < min_diagonal_ratio * factor.adiag[k])
-      factor.invdiag[k] =
-          1 / sqrt(factor.adiag[k]);  // drop to Gauss-Seidel here if the pivot
-                                      // looks dangerously small
+      factor.invdiag[k] = 1 / sqrt(factor.adiag[k]);  // drop to Gauss-Seidel here if the pivot
+                                                      // looks dangerously small
     else
       factor.invdiag[k] = 1 / sqrt(factor.invdiag[k]);
     // finalize the k'th column L(:,k)
@@ -213,8 +206,7 @@ void factor_modified_incomplete_cholesky0(const SparseMatrix<T> &matrix,
 
 // solve L*result=rhs
 template <class T>
-void solve_lower(const SparseColumnLowerFactor<T> &factor,
-                 const std::vector<T> &rhs, std::vector<T> &result) {
+void solve_lower(const SparseColumnLowerFactor<T> &factor, const std::vector<T> &rhs, std::vector<T> &result) {
   assert(factor.n == rhs.size());
   assert(factor.n == result.size());
   result = rhs;
@@ -228,8 +220,7 @@ void solve_lower(const SparseColumnLowerFactor<T> &factor,
 
 // solve L^T*result=rhs
 template <class T>
-void solve_lower_transpose_in_place(const SparseColumnLowerFactor<T> &factor,
-                                    std::vector<T> &x) {
+void solve_lower_transpose_in_place(const SparseColumnLowerFactor<T> &factor, std::vector<T> &x) {
   assert(factor.n == x.size());
   assert(factor.n > 0);
   unsigned int i = factor.n;
@@ -250,19 +241,15 @@ template <class T>
 struct PCGSolver {
   PCGSolver(void) { set_solver_parameters(1e-5, 100, 0.97, 0.25); }
 
-  void set_solver_parameters(T tolerance_factor_, int max_iterations_,
-                             T modified_incomplete_cholesky_parameter_ = 0.97,
-                             T min_diagonal_ratio_ = 0.25) {
+  void set_solver_parameters(T tolerance_factor_, int max_iterations_, T modified_incomplete_cholesky_parameter_ = 0.97, T min_diagonal_ratio_ = 0.25) {
     tolerance_factor = tolerance_factor_;
     if (tolerance_factor < 1e-30) tolerance_factor = 1e-30;
     max_iterations = max_iterations_;
-    modified_incomplete_cholesky_parameter =
-        modified_incomplete_cholesky_parameter_;
+    modified_incomplete_cholesky_parameter = modified_incomplete_cholesky_parameter_;
     min_diagonal_ratio = min_diagonal_ratio_;
   }
 
-  bool solve(const SparseMatrix<T> &matrix, const std::vector<T> &rhs,
-             std::vector<T> &result, T &residual_out, int &iterations_out) {
+  bool solve(const SparseMatrix<T> &matrix, const std::vector<T> &rhs, std::vector<T> &result, T &residual_out, int &iterations_out) {
     unsigned int n = matrix.n;
     if (m.size() != n) {
       m.resize(n);
@@ -323,9 +310,7 @@ struct PCGSolver {
   T modified_incomplete_cholesky_parameter;
   T min_diagonal_ratio;
 
-  void form_preconditioner(const SparseMatrix<T> &matrix) {
-    factor_modified_incomplete_cholesky0(matrix, ic_factor);
-  }
+  void form_preconditioner(const SparseMatrix<T> &matrix) { factor_modified_incomplete_cholesky0(matrix, ic_factor); }
 
   void apply_preconditioner(const std::vector<T> &x, std::vector<T> &result) {
     solve_lower(ic_factor, x, result);

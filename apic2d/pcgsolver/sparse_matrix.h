@@ -26,14 +26,11 @@
 namespace robertbridson {
 template <class T>
 struct SparseMatrix {
-  unsigned int n;  // dimension
-  std::vector<std::vector<unsigned int> >
-      index;  // for each row, a list of all column indices (sorted)
-  std::vector<std::vector<T> > value;  // values corresponding to index
+  unsigned int n;                                 // dimension
+  std::vector<std::vector<unsigned int> > index;  // for each row, a list of all column indices (sorted)
+  std::vector<std::vector<T> > value;             // values corresponding to index
 
-  explicit SparseMatrix(unsigned int n_ = 0,
-                        unsigned int expected_nonzeros_per_row = 7)
-      : n(n_), index(n_), value(n_) {
+  explicit SparseMatrix(unsigned int n_ = 0, unsigned int expected_nonzeros_per_row = 7) : n(n_), index(n_), value(n_) {
     for (unsigned int i = 0; i < n; ++i) {
       index[i].reserve(expected_nonzeros_per_row);
       value[i].reserve(expected_nonzeros_per_row);
@@ -102,8 +99,7 @@ struct SparseMatrix {
   }
 
   // assumes indices is already sorted
-  void add_sparse_row(unsigned int i, const std::vector<unsigned int> &indices,
-                      const std::vector<T> &values) {
+  void add_sparse_row(unsigned int i, const std::vector<unsigned int> &indices, const std::vector<T> &values) {
     unsigned int j = 0, k = 0;
     while (j < indices.size() && k < index[i].size()) {
       if (index[i][k] < indices[j]) {
@@ -169,8 +165,7 @@ typedef SparseMatrix<double> SparseMatrixd;
 
 // perform result=matrix*x
 template <class T>
-void multiply(const SparseMatrix<T> &matrix, const std::vector<T> &x,
-              std::vector<T> &result) {
+void multiply(const SparseMatrix<T> &matrix, const std::vector<T> &x, std::vector<T> &result) {
   assert(matrix.n == x.size());
   result.resize(matrix.n);
   for (unsigned int i = 0; i < matrix.n; ++i) {
@@ -183,8 +178,7 @@ void multiply(const SparseMatrix<T> &matrix, const std::vector<T> &x,
 
 // perform result=result-matrix*x
 template <class T>
-void multiply_and_subtract(const SparseMatrix<T> &matrix,
-                           const std::vector<T> &x, std::vector<T> &result) {
+void multiply_and_subtract(const SparseMatrix<T> &matrix, const std::vector<T> &x, std::vector<T> &result) {
   assert(matrix.n == x.size());
   result.resize(matrix.n);
   for (unsigned int i = 0; i < matrix.n; ++i) {
@@ -204,12 +198,10 @@ struct FixedSparseMatrix {
   unsigned int n;                      // dimension
   std::vector<T> value;                // nonzero values row by row
   std::vector<unsigned int> colindex;  // corresponding column indices
-  std::vector<unsigned int>
-      rowstart;  // where each row starts in value and colindex (and last entry
-                 // is one past the end, the number of nonzeros)
+  std::vector<unsigned int> rowstart;  // where each row starts in value and colindex (and last entry
+                                       // is one past the end, the number of nonzeros)
 
-  explicit FixedSparseMatrix(unsigned int n_ = 0)
-      : n(n_), value(0), colindex(0), rowstart(n_ + 1) {}
+  explicit FixedSparseMatrix(unsigned int n_ = 0) : n(n_), value(0), colindex(0), rowstart(n_ + 1) {}
 
   void clear(void) {
     n = 0;
@@ -269,8 +261,7 @@ typedef FixedSparseMatrix<double> FixedSparseMatrixd;
 
 // perform result=matrix*x
 template <class T>
-void multiply(const FixedSparseMatrix<T> &matrix, const std::vector<T> &x,
-              std::vector<T> &result) {
+void multiply(const FixedSparseMatrix<T> &matrix, const std::vector<T> &x, std::vector<T> &result) {
   assert(matrix.n == x.size());
   result.resize(matrix.n);
   for (unsigned int i = 0; i < matrix.n; ++i) {
@@ -283,8 +274,7 @@ void multiply(const FixedSparseMatrix<T> &matrix, const std::vector<T> &x,
 
 // perform result=result-matrix*x
 template <class T>
-void multiply_and_subtract(const FixedSparseMatrix<T> &matrix,
-                           const std::vector<T> &x, std::vector<T> &result) {
+void multiply_and_subtract(const FixedSparseMatrix<T> &matrix, const std::vector<T> &x, std::vector<T> &result) {
   assert(matrix.n == x.size());
   result.resize(matrix.n);
   for (unsigned int i = 0; i < matrix.n; ++i) {
