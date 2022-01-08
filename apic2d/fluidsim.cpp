@@ -312,11 +312,9 @@ void FluidSim::save_velocity() {
 }
 
 void FluidSim::add_force(scalar dt) {
-  // splat particles_
   for (int j = 0; j < nj_ + 1; ++j) {
     for (int i = 0; i < ni_; ++i) {
       v_(i, j) += -981.0 * dt;
-      Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
     }
   }
 }
