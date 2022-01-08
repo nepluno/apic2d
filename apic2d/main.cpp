@@ -87,5 +87,5 @@ void timer(int junk) {
   for (int i = 0; i < num_substeps; ++i) sim.advance(timestep);
 
   glutPostRedisplay();
-  glutTimerFunc(30, timer, 0);
+  glutTimerFunc(static_cast<int>(ceil(frame_time * 1000.0)), timer, 0);
 }
