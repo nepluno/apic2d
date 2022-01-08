@@ -30,7 +30,7 @@ class sorter;
 enum ParticleType { PT_LIQUID, PT_SOLID };
 
 struct Particle {
-  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, ParticleType type);
+  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, const scalar& density, ParticleType type);
   Particle();
   Particle(const Particle&);
 
@@ -41,7 +41,7 @@ struct Particle {
   Vector2s buf0_;
 
   scalar radii_;
-  scalar dens_;
+  scalar mass_;
   scalar logJ_;
   ParticleType type_;
 };

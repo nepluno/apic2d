@@ -130,7 +130,7 @@ void FluidSim::resample(Vector2s& p, Vector2s& u, Matrix2s& c) {
   m_sorter_->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, [&](const NeighborParticlesType& neighbors) {
     for (const Particle* np : neighbors) {
       Vector2s diff = np->x_ - p;
-      scalar w = 4.0 / 3.0 * M_PI * np->radii_ * np->radii_ * np->radii_ * rho_ * kernel::linear_kernel(diff, re);
+      scalar w = np->mass_ * kernel::linear_kernel(diff, re);
       u += w * np->v_;
       c += w * np->c_;
       wsum += w;
@@ -812,7 +812,7 @@ void FluidSim::init_random_particles() {
         Vector2s pt = Vector2s(x_, y) + origin_;
 
         scalar phi = compute_phi(pt);
-        if (phi > dx_ * 20.0) add_particle(Particle(pt, Vector2s::Zero(), dx_ / sqrt(2.0), PT_LIQUID));
+        if (phi > dx_ * 20.0) particles_.emplace_back(pt, Vector2s::Zero(), dx_ / sqrt(2.0), rho_, PT_LIQUID);
       }
     }
   }
@@ -834,7 +834,7 @@ void FluidSim::map_p2g_linear() {
       scalar sumu = 0.0;
       m_sorter_->getNeigboringParticles_cell(i, j, -1, 0, -1, 1, [&](const NeighborParticlesType& neighbors) {
         for (const Particle* p : neighbors) {
-          scalar w = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_ * kernel::linear_kernel(p->x_ - pos, dx_);
+          scalar w = p->mass_ * kernel::linear_kernel(p->x_ - pos, dx_);
           sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
           sumw += w;
         }
@@ -852,7 +852,7 @@ void FluidSim::map_p2g_linear() {
       scalar sumu = 0.0;
       m_sorter_->getNeigboringParticles_cell(i, j, -1, 1, -1, 0, [&](const NeighborParticlesType& neighbors) {
         for (const Particle* p : neighbors) {
-          scalar w = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_ * kernel::linear_kernel(p->x_ - pos, dx_);
+          scalar w = p->mass_ * kernel::linear_kernel(p->x_ - pos, dx_);
           sumu += w * (p->v_(1) + p->c_.col(1).dot(pos - p->x_));
           sumw += w;
         }
@@ -872,8 +872,7 @@ void FluidSim::map_p2g_quadratic() {
       scalar sumu = 0.0;
       m_sorter_->getNeigboringParticles_cell(i, j, -2, 1, -1, 1, [&](const NeighborParticlesType& neighbors) {
         for (const Particle* p : neighbors) {
-          scalar m = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_;
-          scalar w = m * kernel::quadratic_kernel(p->x_ - pos, dx_);
+          scalar w = p->mass_ * kernel::quadratic_kernel(p->x_ - pos, dx_);
           sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
           sumw += w;
         }
@@ -891,8 +890,7 @@ void FluidSim::map_p2g_quadratic() {
       scalar sumu = 0.0;
       m_sorter_->getNeigboringParticles_cell(i, j, -1, 1, -2, 1, [&](const NeighborParticlesType& neighbors) {
         for (const Particle* p : neighbors) {
-          scalar m = 4.0 / 3.0 * M_PI * rho_ * p->radii_ * p->radii_ * p->radii_;
-          scalar w = m * kernel::quadratic_kernel(p->x_ - pos, dx_);
+          scalar w = p->mass_ * kernel::quadratic_kernel(p->x_ - pos, dx_);
           sumu += w * (p->v_(1) + p->c_.col(1).dot(pos - p->x_));
           sumw += w;
         }
@@ -1029,18 +1027,18 @@ FluidSim::Boundary::Boundary(const Vector2s& center, const Vector2s& parameter, 
 
 FluidSim::Boundary::Boundary(Boundary* op0, Boundary* op1, BOUNDARY_TYPE type) : op0_(op0), op1_(op1), type_(type), sign_(op0 ? op0->sign_ : false) {}
 
-Particle::Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, ParticleType type)
-    : x_(x), v_(v), radii_(radii), dens_(0), logJ_(0), type_(type) {
+Particle::Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, const scalar& density, ParticleType type)
+    : x_(x), v_(v), radii_(radii), mass_(4.0 / 3.0 * M_PI * radii * radii * radii * density), logJ_(0), type_(type) {
   c_.setZero();
   buf0_.setZero();
 }
 
-Particle::Particle() : x_(Vector2s::Zero()), v_(Vector2s::Zero()), radii_(0.0), dens_(0), logJ_(0.0), type_(PT_LIQUID) {
+Particle::Particle() : x_(Vector2s::Zero()), v_(Vector2s::Zero()), radii_(0.0), mass_(0.0), logJ_(0.0), type_(PT_LIQUID) {
   c_.setZero();
   buf0_.setZero();
 }
 
-Particle::Particle(const Particle& p) : x_(p.x_), v_(p.v_), radii_(p.radii_), dens_(0), logJ_(0.0), type_(p.type_) {
+Particle::Particle(const Particle& p) : x_(p.x_), v_(p.v_), radii_(p.radii_), mass_(p.mass_), logJ_(0.0), type_(p.type_) {
   c_.setZero();
   buf0_.setZero();
 }
