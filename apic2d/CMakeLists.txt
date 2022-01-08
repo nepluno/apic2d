@@ -32,7 +32,7 @@ else (TBB_FOUND)
 endif (TBB_FOUND)
 
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
-set_property(TARGET APIC2D PROPERTY CXX_STANDARD 11)
+set_property(TARGET APIC2D PROPERTY CXX_STANDARD 14)
 if (WIN32)
   add_dependencies (APIC2D DllCopy)
 endif ()
