@@ -28,7 +28,7 @@ class sorter {
   sorter(int ni_, int nj_);
   ~sorter();
 
-  void sort(FluidSim* sim);
+  void sort(const std::vector<Particle>& particles, const Vector2s& origin, scalar dx);
 
   template<typename Callable>
   void getNeigboringParticles_cell(int i, int j, int wl, int wh, int hl, int hh, Callable func) {
@@ -42,7 +42,7 @@ class sorter {
   int getNumParticleAt(int i, int j);
   void deleteAllParticles();
 
-  std::vector<std::vector<Particle*> > cells;
+  std::vector<std::vector<const Particle*> > cells;
   int ni;
   int nj;
 };

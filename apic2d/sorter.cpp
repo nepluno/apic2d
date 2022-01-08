@@ -27,7 +27,7 @@ sorter::sorter(int ni_, int nj_) : ni(ni_), nj(nj_) { cells.resize(ni_ * nj_); }
 
 sorter::~sorter() {}
 
-void sorter::sort(FluidSim* sim) {
+void sorter::sort(const std::vector<Particle>& particles, const Vector2s& origin, scalar dx) {
   // Clear All Cells
   for (int j = 0; j < nj; ++j)
     for (int i = 0; i < ni; ++i) {
@@ -35,12 +35,12 @@ void sorter::sort(FluidSim* sim) {
     }
 
   // Store Into The Cells
-  const int np = (int)sim->particles_.size();
+  int np = static_cast<int>(particles.size());
   for (int n = 0; n < np; n++) {
-    Particle* p = &sim->particles_[n];
+    const Particle* p = &particles[n];
 
-    int pi = (int)((p->x_(0) - sim->origin_(0)) / sim->dx_);
-    int pj = (int)((p->x_(1) - sim->origin_(1)) / sim->dx_);
+    int pi = (int)((p->x_(0) - origin(0)) / dx);
+    int pj = (int)((p->x_(1) - origin(1)) / dx);
     int i = max(0, min(ni - 1, pi));
     int j = max(0, min(nj - 1, pj));
     cells[j * ni + i].push_back(p);

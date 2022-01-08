@@ -17,6 +17,7 @@
 #define APIC2D_FLUIDSIM_H_
 
 #include <chrono>
+#include <memory>
 #include <vector>
 
 #include "array2.h"
@@ -49,6 +50,7 @@ class FluidSim {
  public:
   using Clock = std::chrono::high_resolution_clock;
   using TimePoint = std::chrono::time_point<Clock>;
+  using NeighborParticlesType = std::vector<const Particle*>;
 
   virtual ~FluidSim();
 
@@ -120,41 +122,6 @@ class FluidSim {
   scalar compute_phi(const Vector2s& pos) const;
   scalar compute_phi(const Vector2s& pos, const Boundary& b) const;
 
-  /*! Boundaries */
-  Boundary* root_boundary_;
-
-  /*! Grid Origin */
-  Vector2s origin_;
-
-  /*! Grid dimensions */
-  int ni_, nj_;
-  scalar dx_;
-
-  /*! Fluid velocity */
-  Array2s u_, v_;
-  Array2s temp_u_, temp_v_;
-  Array2s saved_u_, saved_v_;
-
-  /*! Tracer particles */
-  std::vector<Particle> particles_;
-
-  /*! Static geometry representation */
-  Array2s nodal_solid_phi_;
-  Array2s liquid_phi_;
-  Array2s u_weights_, v_weights_;
-
-  /*! Data arrays for extrapolation */
-  Array2c valid_, old_valid_;
-  Array2c u_valid_, v_valid_;
-
-  sorter* m_sorter_;
-
-  /*! Solver data */
-  robertbridson::PCGSolver<scalar> solver_;
-  robertbridson::SparseMatrix<scalar> matrix_;
-  std::vector<scalar> rhs_;
-  std::vector<scalar> pressure_;
-
   Vector2s get_velocity_and_affine_matrix_with_order(const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
                                                      FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix);
   Vector2s get_saved_velocity_with_order(const Vector2s& position, FluidSim::INTERPOLATION_ORDER i_order);
@@ -189,14 +156,8 @@ class FluidSim {
 
   void relaxation(scalar dt);
   void resample(Vector2s& p, Vector2s& u, Matrix2s& c);
-
-  bool draw_grid_;
-  bool draw_particles_;
-  bool draw_velocities_;
-  bool draw_boundaries_;
-  bool print_timing_;
-
-  TimePoint last_time_point_;
+  void set_root_boundary(const Boundary& b) { root_boundary_ = std::make_unique<Boundary>(b); }
+  const std::vector<Particle>& get_particles() const { return particles_; }
 
  protected:
   inline scalar circle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const { return ((position - centre).norm() - radius); }
@@ -265,7 +226,49 @@ class FluidSim {
 
   void constrain_velocity();
 
-  scalar cfl();
+ private:
+  /*! Boundaries */
+  std::unique_ptr<Boundary> root_boundary_;
+
+  /*! Grid Origin */
+  Vector2s origin_;
+
+  /*! Grid dimensions */
+  int ni_, nj_;
+  scalar dx_;
+
+  /*! Fluid velocity */
+  Array2s u_, v_;
+  Array2s temp_u_, temp_v_;
+  Array2s saved_u_, saved_v_;
+
+  /*! Tracer particles */
+  std::vector<Particle> particles_;
+
+  /*! Static geometry representation */
+  Array2s nodal_solid_phi_;
+  Array2s liquid_phi_;
+  Array2s u_weights_, v_weights_;
+
+  /*! Data arrays for extrapolation */
+  Array2c valid_, old_valid_;
+  Array2c u_valid_, v_valid_;
+
+  sorter* m_sorter_;
+
+  /*! Solver data */
+  robertbridson::PCGSolver<scalar> solver_;
+  robertbridson::SparseMatrix<scalar> matrix_;
+  std::vector<scalar> rhs_;
+  std::vector<scalar> pressure_;
+
+  bool draw_grid_;
+  bool draw_particles_;
+  bool draw_velocities_;
+  bool draw_boundaries_;
+  bool print_timing_;
+
+  TimePoint last_time_point_;
 };
 
 #endif  // APIC2D_FLUIDSIM_H_
