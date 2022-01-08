@@ -35,7 +35,7 @@ scalar grid_width = 100.0;
 scalar cfl_number = 3.0;
 scalar refresh_rate = 60.0;
 scalar frame_time = 1.0 / refresh_rate;
-scalar step_limit = 0.005;
+scalar step_limit = 0.01;
 
 FluidSim sim;
 
