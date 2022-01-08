@@ -53,55 +53,6 @@ struct Camera {
   virtual void display_screen(void) {}  // in case the camera needs to show anything on screen
 };
 
-struct Target3D : public Camera {
-  scalar target[3], dist;
-  scalar heading, pitch;
-  scalar default_target[3], default_dist;
-  scalar default_heading, default_pitch;
-  scalar fovy;
-  scalar near_clip_factor, far_clip_factor;
-  enum { INACTIVE, ROTATE, TRUCK, DOLLY } action_mode;
-  int oldmousex, oldmousey;
-
-  Target3D(scalar target_[3] = 0, scalar dist_ = 1, scalar heading_ = 0, scalar pitch_ = 0, scalar fovy_ = 45, scalar near_clip_factor_ = 0.01,
-           scalar far_clip_factor_ = 100);
-  void click(int button, int state, int x, int y);
-  void drag(int x, int y);
-  void return_to_default(void);
-  void transform_mouse(int x, int y, scalar ray_origin[3], scalar ray_direction[3]);
-  void get_viewing_direction(scalar direction[3]);
-  void gl_transform(void);
-  void export_rib(std::ostream &output);
-};
-
-// same as above, but with orthographic projection
-struct TargetOrtho3D : public Camera {
-  scalar target[3], dist;
-  scalar heading, pitch;
-  scalar default_target[3], default_dist;
-  scalar default_heading, default_pitch;
-  scalar height_factor;
-  scalar near_clip_factor, far_clip_factor;
-  enum {
-    INACTIVE,
-    ROTATE,
-    TRUCK,
-    DOLLY
-  } action_mode;  // @@@@ WHAT ABOUT ZOOMING??? IS WIDTH ALWAYS A FUNCTION OF
-                  // DIST?
-  int oldmousex, oldmousey;
-
-  TargetOrtho3D(scalar target_[3] = 0, scalar dist_ = 1, scalar heading_ = 0, scalar pitch_ = 0, scalar height_factor_ = 1, scalar near_clip_factor_ = 0.01,
-                scalar far_clip_factor_ = 100);
-  void click(int button, int state, int x, int y);
-  void drag(int x, int y);
-  void return_to_default(void);
-  void transform_mouse(int x, int y, scalar ray_origin[3], scalar ray_direction[3]);
-  void get_viewing_direction(scalar direction[3]);
-  void gl_transform(void);
-  void export_rib(std::ostream &output);
-};
-
 struct PanZoom2D : public Camera {
   scalar bottom, left, height;
   scalar default_bottom, default_left, default_height;
@@ -194,7 +145,6 @@ void set_generic_lights(void);
 void set_generic_material(scalar r, scalar g, scalar b, GLenum face = GL_FRONT_AND_BACK);
 void set_matte_material(scalar r, scalar g, scalar b, GLenum face = GL_FRONT_AND_BACK);
 //@@@@@@@ USEFUL FUNCTIONALITY:
-void draw_3d_arrow(const scalar base[3], const scalar point[3], scalar arrow_head_length = 0);
 void draw_2d_arrow(const Vector2s base, const Vector2s point, scalar arrow_head_length);
 void draw_coordinate_grid(scalar size = 1, int spacing = 10);
 void draw_text(const scalar point[3], const char *text, int fontsize = 12);
