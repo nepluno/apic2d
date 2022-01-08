@@ -15,8 +15,6 @@ endif (NOT CMAKE_BUILD_TYPE)
 add_definitions (-DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # Add warnings to the compiler flags
-#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions (-DDEBUG)
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -42,8 +40,6 @@ macro (append_files files ext)
     list (APPEND ${files} ${_files})
   endforeach (dir)
 endmacro (append_files)
-
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
 # Eigen3 library is required
 find_package (Eigen3 REQUIRED)

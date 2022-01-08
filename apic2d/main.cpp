@@ -46,7 +46,7 @@ void timer(int junk);
 
 Vector2s c0(50, 50), c1(70, 50), c2(30, 35), c3(50, 70);
 Vector2s s0(10, 5);
-scalar rad0 = 40, rad1 = 10, rad2 = 10, rad3 = 10;
+scalar rad0 = 40;
 Vector2s o0(0.0, 0.0);
 
 // Main testing code

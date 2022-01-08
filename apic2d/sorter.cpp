@@ -47,14 +47,6 @@ void sorter::sort(FluidSim* sim) {
   }
 }
 
-void sorter::getNeigboringParticles_cell(int i, int j, int wl, int wh, int hl, int hh, std::vector<Particle*>& res) {
-  for (int si = i + wl; si <= i + wh; si++)
-    for (int sj = j + hl; sj <= j + hh; sj++) {
-      if (si < 0 || si > ni - 1 || sj < 0 || sj > nj - 1) continue;
-      res.insert(res.end(), cells[sj * ni + si].begin(), cells[sj * ni + si].end());
-    }
-}
-
 int sorter::getNumParticleAt(int i, int j) { return (int)cells[j * ni + i].size(); }
 
 void sorter::deleteAllParticles() {

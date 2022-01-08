@@ -22,7 +22,7 @@
 #include <Eigen/SparseQR>
 #include <Eigen/StdVector>
 
-typedef double scalar;
+typedef float scalar;
 typedef unsigned long long uint64;
 
 struct int_scalar {

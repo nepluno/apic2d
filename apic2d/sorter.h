@@ -29,7 +29,15 @@ class sorter {
   ~sorter();
 
   void sort(FluidSim* sim);
-  void getNeigboringParticles_cell(int i, int j, int wl, int wh, int hl, int hh, std::vector<Particle*>&);
+
+  template<typename Callable>
+  void getNeigboringParticles_cell(int i, int j, int wl, int wh, int hl, int hh, Callable func) {
+    for (int si = i + wl; si <= i + wh; si++)
+      for (int sj = j + hl; sj <= j + hh; sj++) {
+        if (si < 0 || si > ni - 1 || sj < 0 || sj > nj - 1) continue;
+        func(cells[sj * ni + si]);
+      }
+  }
 
   int getNumParticleAt(int i, int j);
   void deleteAllParticles();

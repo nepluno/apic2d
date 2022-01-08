@@ -33,8 +33,4 @@ void draw_arrow2d(const Vector2s& start, const Vector2s& end, scalar arrow_head_
 void draw_grid_data2d(Array2s& data, Vector2s origin, scalar dx, bool color = false);
 void draw_trimesh2d(const std::vector<Vector2s>& vertices, const std::vector<Vector3i>& tris);
 
-void draw_trimesh3d(const std::vector<Vector3s>& vertices, const std::vector<Vector3i>& tris);
-void draw_trimesh3d(const std::vector<Vector3s>& vertices, const std::vector<Vector3i>& tris, const std::vector<Vector3s>& normals);
-void draw_box3d(const Vector3s& dimensions);
-
 #endif  // APIC2D_OPENGL_UTILS_H_

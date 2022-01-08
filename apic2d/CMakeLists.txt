@@ -1,8 +1,8 @@
 # APIC2D Executable
 
-append_files (Headers "h" . pcgsolver)
-append_files (Sources "cpp" . pcgsolver)
-append_files (Sources "c" . pcgsolver)
+append_files (Headers "h" .)
+append_files (Sources "cpp" .)
+append_files (Sources "c" .)
 
 # Locate OpenGL
 find_package (OpenGL REQUIRED)
@@ -22,7 +22,17 @@ else ()
   message (SEND_ERROR "Unable to locate FreeGLUT")
 endif ()
 
+# Locate TBB
+find_package (TBB REQUIRED)
+if (TBB_FOUND)
+  include_directories (${TBB_INCLUDE_DIRS})
+  set (APIC2D_LIBRARIES ${APIC2D_LIBRARIES} ${TBB_LIBRARIES})
+else (TBB_FOUND)
+  message (SEND_ERROR "Unable to locate TBB")
+endif (TBB_FOUND)
+
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
+set_property(TARGET APIC2D PROPERTY CXX_STANDARD 11)
 if (WIN32)
   add_dependencies (APIC2D DllCopy)
 endif ()

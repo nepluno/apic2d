@@ -16,11 +16,13 @@
 #ifndef APIC2D_FLUIDSIM_H_
 #define APIC2D_FLUIDSIM_H_
 
+#include <chrono>
 #include <vector>
 
 #include "array2.h"
 #include "math_defs.h"
-#include "pcgsolver/pcg_solver.h"
+#include "sparse_matrix.h"
+#include "pcg_solver.h"
 
 class sorter;
 
@@ -45,6 +47,9 @@ struct Particle {
 
 class FluidSim {
  public:
+  using Clock = std::chrono::high_resolution_clock;
+  using TimePoint = std::chrono::time_point<Clock>;
+
   virtual ~FluidSim();
 
   scalar rho_;
@@ -105,8 +110,8 @@ class FluidSim {
     scalar sign_;
   };
 
-  void initialize(const Vector2s& origin_, scalar width, int ni_, int nj_, scalar rho_, bool draw_grid_ = true, bool draw_particles_ = true,
-                  bool draw_velocities_ = true, bool draw_boundaries_ = true);
+  void initialize(const Vector2s& origin, scalar width, int ni, int nj, scalar rho, bool draw_grid = true, bool draw_particles = true,
+                  bool draw_velocities = true, bool draw_boundaries = true, bool print_timing = false);
   void advance(scalar dt);
   void update_boundary();
   void init_random_particles();
@@ -147,8 +152,8 @@ class FluidSim {
   /*! Solver data */
   robertbridson::PCGSolver<scalar> solver_;
   robertbridson::SparseMatrix<scalar> matrix_;
-  std::vector<double> rhs_;
-  std::vector<double> pressure_;
+  std::vector<scalar> rhs_;
+  std::vector<scalar> pressure_;
 
   Vector2s get_velocity_and_affine_matrix_with_order(const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
                                                      FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix);
@@ -182,14 +187,16 @@ class FluidSim {
 
   void save_velocity();
 
-  void compute_density();
-  void correct(scalar dt);
+  void relaxation(scalar dt);
   void resample(Vector2s& p, Vector2s& u, Matrix2s& c);
 
   bool draw_grid_;
   bool draw_particles_;
   bool draw_velocities_;
   bool draw_boundaries_;
+  bool print_timing_;
+
+  TimePoint last_time_point_;
 
  protected:
   inline scalar circle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const { return ((position - centre).norm() - radius); }
@@ -197,22 +204,22 @@ class FluidSim {
   inline scalar box_phi(const Vector2s& position, const Vector2s& centre, const Vector2s& expand) const {
     scalar dx = fabs(position[0] - centre[0]) - expand[0];
     scalar dy = fabs(position[1] - centre[1]) - expand[1];
-    scalar dax = max(dx, 0.0);
-    scalar day = max(dy, 0.0);
-    return min(max(dx, dy), 0.0) + sqrt(dax * dax + day * day);
+    scalar dax = max(dx, 0.0f);
+    scalar day = max(dy, 0.0f);
+    return min(max(dx, dy), 0.0f) + sqrt(dax * dax + day * day);
   }
 
   inline scalar hexagon_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const {
     scalar dx = fabs(position[0] - centre[0]);
     scalar dy = fabs(position[1] - centre[1]);
-    return max((dx * 0.866025 + dy * 0.5), dy) - radius;
+    return max((dx * 0.866025f + dy * 0.5f), dy) - radius;
   }
 
   inline scalar triangle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const {
     scalar px = position[0] - centre[0];
     scalar py = position[1] - centre[1];
     scalar dx = fabs(px);
-    return max(dx * 0.866025 + py * 0.5, -py) - radius * 0.5;
+    return max(dx * 0.866025f + py * 0.5f, -py) - radius * 0.5f;
   }
 
   inline scalar cylinder_phi(const Vector2s& position, const Vector2s& centre, scalar theta, scalar radius) const {
@@ -231,6 +238,17 @@ class FluidSim {
     return max(-circle_phi(position, centre, radius0), circle_phi(position, centre, radius1));
   }
 
+  inline void tick() {
+    if (print_timing_) last_time_point_ = Clock::now();
+  }
+
+  inline void tock(const std::string& info) {
+    if (print_timing_)
+      std::cout << "[" << info << "] "
+                << static_cast<scalar>(std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - last_time_point_).count()) * 1e-6 << " ms"
+                << std::endl;
+  }
+
   Vector2s trace_rk2(const Vector2s& position, scalar dt);
 
   // tracer particle operations
@@ -241,7 +259,6 @@ class FluidSim {
   void advect(scalar dt);
   void add_force(scalar dt);
 
-  void project(scalar dt);
   void compute_weights();
   void solve_pressure(scalar dt);
   void compute_phi();

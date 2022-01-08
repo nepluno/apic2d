@@ -17,6 +17,7 @@
 #define APIC2D_ARRAY2_H_
 
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <vector>
 

@@ -28,10 +28,10 @@
 void draw_circle2d(const Vector2s& centre, scalar rad, int segs) {
   glBegin(GL_POLYGON);
   for (int i = 0; i < segs; i++) {
-    scalar cosine = rad * cos(i * 2 * M_PI / (scalar)(segs));
-    scalar sine = rad * sin(i * 2 * M_PI / (scalar)(segs));
+    scalar cosine = rad * cos(i * 2 * 3.14159 / (scalar)(segs));
+    scalar sine = rad * sin(i * 2 * 3.14159 / (scalar)(segs));
     Vector2s tmp = (Vector2s(cosine, sine) + centre);
-    glVertex2dv(tmp.data());
+    glVertex2fv(tmp.data());
   }
   glEnd();
 }
@@ -46,16 +46,16 @@ void draw_grid2d(const Vector2s& origin, scalar dx, int nx, int ny) {
     Vector2s b(i * dx, height);
     Vector2s oa = origin + a;
     Vector2s ob = origin + b;
-    glVertex2dv(oa.data());
-    glVertex2dv(ob.data());
+    glVertex2fv(oa.data());
+    glVertex2fv(ob.data());
   }
   for (int j = 0; j <= ny; ++j) {
     Vector2s a(0, j * dx);
     Vector2s b(width, j * dx);
     Vector2s oa = origin + a;
     Vector2s ob = origin + b;
-    glVertex2dv(oa.data());
-    glVertex2dv(ob.data());
+    glVertex2fv(oa.data());
+    glVertex2fv(ob.data());
   }
   glEnd();
 }
@@ -66,18 +66,18 @@ void draw_box2d(const Vector2s& origin, scalar width, scalar height) {
   Vector2s o3 = origin + Vector2s(width, 0);
 
   glBegin(GL_POLYGON);
-  glVertex2dv(origin.data());
-  glVertex2dv(o1.data());
-  glVertex2dv(o2.data());
-  glVertex2dv(o3.data());
+  glVertex2fv(origin.data());
+  glVertex2fv(o1.data());
+  glVertex2fv(o2.data());
+  glVertex2fv(o3.data());
   glEnd();
 }
 
 void draw_segmentset2d(const std::vector<Vector2s>& vertices, const std::vector<Vector2i>& edges) {
   glBegin(GL_LINES);
   for (unsigned int i = 0; i < edges.size(); ++i) {
-    glVertex2dv(vertices[edges[i][0]].data());
-    glVertex2dv(vertices[edges[i][1]].data());
+    glVertex2fv(vertices[edges[i][0]].data());
+    glVertex2fv(vertices[edges[i][1]].data());
   }
   glEnd();
 }
@@ -85,26 +85,26 @@ void draw_segmentset2d(const std::vector<Vector2s>& vertices, const std::vector<
 void draw_points2d(const std::vector<Vector2s>& points) {
   glBegin(GL_POINTS);
   for (unsigned int i = 0; i < points.size(); ++i) {
-    glVertex2dv(points[i].data());
+    glVertex2fv(points[i].data());
   }
   glEnd();
 }
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices) {
   glBegin(GL_POLYGON);
-  for (unsigned int i = 0; i < vertices.size(); ++i) glVertex2dv(vertices[i].data());
+  for (unsigned int i = 0; i < vertices.size(); ++i) glVertex2fv(vertices[i].data());
   glEnd();
 }
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices, const std::vector<int>& order) {
   glBegin(GL_POLYGON);
-  for (unsigned int i = 0; i < order.size(); ++i) glVertex2dv(vertices[order[i]].data());
+  for (unsigned int i = 0; i < order.size(); ++i) glVertex2fv(vertices[order[i]].data());
   glEnd();
 }
 void draw_segment2d(const Vector2s& start, const Vector2s& end) {
   glBegin(GL_LINES);
-  glVertex2dv(start.data());
-  glVertex2dv(end.data());
+  glVertex2fv(start.data());
+  glVertex2fv(end.data());
   glEnd();
 }
 
@@ -124,21 +124,21 @@ void draw_arrow2d(const Vector2s& start, const Vector2s& end, scalar arrow_head_
   Vector2s tip_right = end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm - perp);
 
   glBegin(GL_LINES);
-  glVertex2dv(start.data());
-  glVertex2dv(end.data());
-  glVertex2dv(end.data());
-  glVertex2dv(tip_left.data());
-  glVertex2dv(end.data());
-  glVertex2dv(tip_right.data());
+  glVertex2fv(start.data());
+  glVertex2fv(end.data());
+  glVertex2fv(end.data());
+  glVertex2fv(tip_left.data());
+  glVertex2fv(end.data());
+  glVertex2fv(tip_right.data());
   glEnd();
 }
 
 void draw_trimesh2d(const std::vector<Vector2s>& vertices, const std::vector<Vector3i>& tris) {
   glBegin(GL_TRIANGLES);
   for (unsigned int i = 0; i < tris.size(); ++i) {
-    glVertex2dv(vertices[tris[i][0]].data());
-    glVertex2dv(vertices[tris[i][1]].data());
-    glVertex2dv(vertices[tris[i][2]].data());
+    glVertex2fv(vertices[tris[i][0]].data());
+    glVertex2fv(vertices[tris[i][1]].data());
+    glVertex2fv(vertices[tris[i][2]].data());
   }
   glEnd();
 }
@@ -210,84 +210,4 @@ void draw_grid_data2d(Array2s& data, Vector2s origin, scalar dx, bool color) {
       draw_box2d(bl, dx, dx);
     }
   }
-}
-
-void draw_trimesh3d(const std::vector<Vector3s>& vertices, const std::vector<Vector3i>& tris) {
-  glBegin(GL_TRIANGLES);
-  for (unsigned int i = 0; i < tris.size(); ++i) {
-    glVertex3dv(vertices[tris[i][0]].data());
-    glVertex3dv(vertices[tris[i][1]].data());
-    glVertex3dv(vertices[tris[i][2]].data());
-  }
-  glEnd();
-}
-
-void draw_trimesh3d(const std::vector<Vector3s>& vertices, const std::vector<Vector3i>& tris, const std::vector<Vector3s>& normals) {
-  glBegin(GL_TRIANGLES);
-  for (unsigned int i = 0; i < tris.size(); ++i) {
-    glNormal3dv(normals[tris[i][0]].data());
-    glVertex3dv(vertices[tris[i][0]].data());
-    glNormal3dv(normals[tris[i][1]].data());
-    glVertex3dv(vertices[tris[i][1]].data());
-    glNormal3dv(normals[tris[i][2]].data());
-    glVertex3dv(vertices[tris[i][2]].data());
-  }
-  glEnd();
-}
-
-void draw_box3d(const Vector3s& dimensions) {
-  // Draw an axis-aligned box with specified dimensions,
-  // where the midpoint of the box is at the origin
-
-  scalar width = dimensions[0];
-  scalar height = dimensions[1];
-  scalar depth = dimensions[2];
-
-  glBegin(GL_POLYGON);
-  glNormal3d(-1, 0, 0);
-  glVertex3d(-0.5 * width, -0.5 * height, 0.5 * depth);
-  glVertex3d(-0.5 * width, 0.5 * height, 0.5 * depth);
-  glVertex3d(-0.5 * width, 0.5 * height, -0.5 * depth);
-  glVertex3d(-0.5 * width, -0.5 * height, -0.5 * depth);
-  glEnd();
-
-  glBegin(GL_POLYGON);
-  glNormal3d(1, 0, 0);
-  glVertex3d(0.5 * width, -0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, 0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, 0.5 * height, -0.5 * depth);
-  glVertex3d(0.5 * width, -0.5 * height, -0.5 * depth);
-  glEnd();
-
-  glBegin(GL_POLYGON);
-  glNormal3d(0, 0, -1);
-  glVertex3d(-0.5 * width, -0.5 * height, -0.5 * depth);
-  glVertex3d(0.5 * width, -0.5 * height, -0.5 * depth);
-  glVertex3d(0.5 * width, 0.5 * height, -0.5 * depth);
-  glVertex3d(-0.5 * width, 0.5 * height, -0.5 * depth);
-  glEnd();
-
-  glBegin(GL_POLYGON);
-  glNormal3d(0, 0, 1);
-  glVertex3d(-0.5 * width, -0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, -0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, 0.5 * height, 0.5 * depth);
-  glVertex3d(-0.5 * width, 0.5 * height, 0.5 * depth);
-  glEnd();
-
-  glBegin(GL_POLYGON);
-  glNormal3d(0, -1, 0);
-  glVertex3d(-0.5 * width, -0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, -0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, -0.5 * height, -0.5 * depth);
-  glVertex3d(-0.5 * width, -0.5 * height, -0.5 * depth);
-  glEnd();
-
-  glBegin(GL_POLYGON);
-  glNormal3d(0, 1, 0);
-  glVertex3d(-0.5 * width, 0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, 0.5 * height, 0.5 * depth);
-  glVertex3d(0.5 * width, 0.5 * height, -0.5 * depth);
-  glVertex3d(-0.5 * width, 0.5 * height, -0.5 * depth);
-  glEnd();
 }
