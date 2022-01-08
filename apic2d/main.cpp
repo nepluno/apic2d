@@ -80,12 +80,11 @@ int main(int argc, char **argv) {
 void display(void) { sim.render(); }
 
 void timer(int junk) {
+  glutPostRedisplay();
+  glutTimerFunc(static_cast<int>(ceil(frame_time * 1000.0)), timer, 0);
   scalar max_timestep = std::min(step_limit, sim.compute_cfl() * cfl_number);
   int num_substeps = static_cast<int>(std::ceil(frame_time / max_timestep));
   scalar timestep = frame_time / static_cast<scalar>(num_substeps);
 
   for (int i = 0; i < num_substeps; ++i) sim.advance(timestep);
-
-  glutPostRedisplay();
-  glutTimerFunc(static_cast<int>(ceil(frame_time * 1000.0)), timer, 0);
 }
