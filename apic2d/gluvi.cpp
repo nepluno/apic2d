@@ -404,7 +404,6 @@ static void gluviDisplay() {
   if (userDisplayFunc) userDisplayFunc();
 
   // now draw widgets on top
-  glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LINE_BIT);
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_LIGHTING);
   glLineWidth(1);
@@ -420,8 +419,6 @@ static void gluviDisplay() {
 
   // and allow the camera to draw something on screen (e.g. for zooming extent)
   if (camera) camera->display_screen();
-
-  glPopAttrib();
 
   glutSwapBuffers();
 }
@@ -636,9 +633,6 @@ void set_matte_material(scalar r, scalar g, scalar b, GLenum face) {
 // line width, point size, and color are set by the user prior to calling the
 // routine
 void draw_2d_arrow(const Vector2s base, const Vector2s point, scalar arrow_head_length) {
-  // glPushAttrib(GL_CURRENT_BIT|GL_ENABLE_BIT|GL_LINE_BIT);
-  // glDisable(GL_LIGHTING);
-
   Vector2s w = point - base;
   double len = w.norm();
 
@@ -678,8 +672,6 @@ void draw_2d_arrow(const Vector2s base, const Vector2s point, scalar arrow_head_
   glVertex2f(point[0], point[1]);
   glVertex2f(arrow2[0], arrow2[1]);
   glEnd();
-
-  // glPopAttrib();
 }
 
 void draw_text(const scalar point[3], const char *text, int fontsize) {
@@ -690,7 +682,6 @@ void draw_text(const scalar point[3], const char *text, int fontsize) {
 
 void init(const char *windowtitle, int *argc, char **argv) {
   glutInit(argc, argv);
-  glutInitDisplayString("rgba stencil double");
 #ifdef __APPLE__
   glutInitWindowSize(winwidth * 2, winheight * 2);
 #else
