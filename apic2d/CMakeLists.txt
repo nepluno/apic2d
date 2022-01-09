@@ -23,7 +23,7 @@ else ()
 endif ()
 
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
-set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
+set_property(TARGET APIC2D PROPERTY CXX_STANDARD 14)
 if (WIN32)
   add_dependencies (APIC2D DllCopy)
 endif ()
