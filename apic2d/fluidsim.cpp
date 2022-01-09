@@ -1033,7 +1033,6 @@ void FluidSim::render() {
   }
 
   if (draw_boundaries_) {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     render_boundaries(*root_boundary_);
   }
 

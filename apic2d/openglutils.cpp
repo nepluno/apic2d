@@ -26,12 +26,15 @@
 #include "math_defs.h"
 
 void draw_circle2d(const Vector2s& centre, scalar rad, int segs) {
-  glBegin(GL_POLYGON);
-  for (int i = 0; i < segs; i++) {
+  glBegin(GL_LINES);
+  for (int i = 0; i <= segs; i++) {
     scalar cosine = rad * cos(i * 2 * 3.14159 / (scalar)(segs));
     scalar sine = rad * sin(i * 2 * 3.14159 / (scalar)(segs));
     Vector2s tmp = (Vector2s(cosine, sine) + centre);
     glVertex2fv(tmp.data());
+    if (i > 0 && i < segs) {
+      glVertex2fv(tmp.data());        
+    }
   }
   glEnd();
 }
@@ -65,11 +68,15 @@ void draw_box2d(const Vector2s& origin, scalar width, scalar height) {
   Vector2s o2 = origin + Vector2s(width, height);
   Vector2s o3 = origin + Vector2s(width, 0);
 
-  glBegin(GL_POLYGON);
+  glBegin(GL_LINES);
   glVertex2fv(origin.data());
   glVertex2fv(o1.data());
+  glVertex2fv(o1.data());
+  glVertex2fv(o2.data());
   glVertex2fv(o2.data());
   glVertex2fv(o3.data());
+  glVertex2fv(o3.data());
+  glVertex2fv(origin.data());
   glEnd();
 }
 
@@ -91,14 +98,24 @@ void draw_points2d(const std::vector<Vector2s>& points) {
 }
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices) {
-  glBegin(GL_POLYGON);
-  for (unsigned int i = 0; i < vertices.size(); ++i) glVertex2fv(vertices[i].data());
+  glBegin(GL_LINES);
+  for (unsigned int i = 0; i <= vertices.size(); ++i) {
+    glVertex2fv(vertices[i % vertices.size()].data());
+    if (i > 0 && i < vertices.size()) {
+      glVertex2fv(vertices[i].data());    
+    }
+  }
   glEnd();
 }
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices, const std::vector<int>& order) {
-  glBegin(GL_POLYGON);
-  for (unsigned int i = 0; i < order.size(); ++i) glVertex2fv(vertices[order[i]].data());
+  glBegin(GL_LINES);
+  for (unsigned int i = 0; i <= order.size(); ++i) {
+    glVertex2fv(vertices[order[i % order.size()]].data());
+    if (i > 0 && i < order.size()) {
+      glVertex2fv(vertices[order[i]].data());    
+    }
+  }
   glEnd();
 }
 void draw_segment2d(const Vector2s& start, const Vector2s& end) {
@@ -196,7 +213,6 @@ void draw_grid_data2d(Array2s& data, Vector2s origin, scalar dx, bool color) {
 
   for (int j = 0; j < data.nj; ++j) {
     for (int i = 0; i < data.ni; ++i) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
       Vector2s bl = origin + Vector2s(i * dx, j * dx);
       scalar r, g, b;
       if (color) {
