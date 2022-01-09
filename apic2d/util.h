@@ -50,7 +50,7 @@ inline void parallel_for(Index start, Index end, Callable c) {
     v.push_back(std::thread(func, tid));
   }
   func(0);
-  std::for_each(v.begin(), v.end(), [](std::thread& x){x.join();});
+  std::for_each(v.begin(), v.end(), [](std::thread& x) { x.join(); });
 }
 
 template <class T>
