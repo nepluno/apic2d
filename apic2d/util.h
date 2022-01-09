@@ -18,13 +18,11 @@
 
 #include <algorithm>
 #include <iostream>
+#include <execution>
+#include <thread>
 #include <vector>
 
 #include "math_defs.h"
-
-#ifdef USE_TBB
-#include <tbb/tbb.h>
-#endif
 
 #ifndef M_PI
 const double M_PI = 3.1415926535897932384626433832795;
@@ -41,13 +39,14 @@ using std::swap;
 
 template <typename Index, typename Callable>
 inline void parallel_for(Index start, Index end, Callable c) {
-#ifdef USE_TBB
-  tbb::parallel_for(start, end, c);
-#else
-  for (Index i = start; i < end; ++i) {
-    c(i);
-  }
-#endif
+  static std::vector<Index> v(std::thread::hardware_concurrency());
+  std::for_each(std::execution::par_unseq, v.begin(), v.end(), [&](auto& item) { 
+    Index tid = &item - &*v.begin(); 
+    Index gap = std::thread::hardware_concurrency();
+    for (Index i = start + tid; i < end; i += gap) {
+      c(i);
+    }
+  });
 }
 
 template <class T>

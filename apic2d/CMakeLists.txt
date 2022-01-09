@@ -22,22 +22,8 @@ else ()
   message (SEND_ERROR "Unable to locate FreeGLUT")
 endif ()
 
-option(USE_TBB "Use TBB and multi-threading" ON)
-
-if (USE_TBB)
-# Locate TBB
-  find_package (TBB REQUIRED)
-  if (TBB_FOUND)
-    include_directories (${TBB_INCLUDE_DIRS})
-    set (APIC2D_LIBRARIES ${APIC2D_LIBRARIES} ${TBB_LIBRARIES})
-    add_definitions(-DUSE_TBB)
-  else ()
-    message (SEND_ERROR "Unable to locate TBB")
-  endif ()
-endif ()
-
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
-set_property(TARGET APIC2D PROPERTY CXX_STANDARD 14)
+set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
 if (WIN32)
   add_dependencies (APIC2D DllCopy)
 endif ()
