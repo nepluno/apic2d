@@ -30,8 +30,6 @@
 #include <GL/glut.h>  // ...when everyone else puts it here?
 #endif
 
-#include <tbb/tbb.h>
-
 #include "openglutils.h"
 
 // Change here to try different integration scheme, options:
@@ -157,7 +155,7 @@ void FluidSim::relaxation(scalar dt) {
 
   int offset = rand() % particle_correction_step;
   // Compute Pseudo Moved Point
-  tbb::parallel_for(0, np, [&](int n) {
+  parallel_for(0, np, [&](int n) {
     if (n % particle_correction_step != offset) return;
 
     Particle& p = particles_[n];
@@ -197,7 +195,7 @@ void FluidSim::relaxation(scalar dt) {
   });
 
   // Update
-  tbb::parallel_for(0, np, [&](int n) {
+  parallel_for(0, np, [&](int n) {
     if (n % particle_correction_step != offset) return;
     Particle& p = particles_[n];
     if (p.type_ != PT_LIQUID) return;
@@ -376,7 +374,7 @@ void FluidSim::constrain_velocity() {
   // An exact normal would do better.
 
   // constrain u
-  tbb::parallel_for(0, u_.nj, [this](int j) {
+  parallel_for(0, u_.nj, [this](int j) {
     for (int i = 0; i < u_.ni; ++i) {
       if (u_weights_(i, j) == 0) {
         // apply constraint
@@ -392,7 +390,7 @@ void FluidSim::constrain_velocity() {
     }
   });
 
-  tbb::parallel_for(0, u_.nj, [this](int j) {
+  parallel_for(0, u_.nj, [this](int j) {
     for (int i = 0; i < u_.ni; ++i) {
       if (u_weights_(i, j) == 0) {
         u_(i, j) = temp_u_(i, j);
@@ -401,7 +399,7 @@ void FluidSim::constrain_velocity() {
   });
 
   // constrain v
-  tbb::parallel_for(0, v_.nj, [this](int j) {
+  parallel_for(0, v_.nj, [this](int j) {
     for (int i = 0; i < v_.ni; ++i) {
       if (v_weights_(i, j) == 0) {
         // apply constraint
@@ -417,7 +415,7 @@ void FluidSim::constrain_velocity() {
     }
   });
 
-  tbb::parallel_for(0, u_.nj, [this](int j) {
+  parallel_for(0, u_.nj, [this](int j) {
     for (int i = 0; i < u_.ni; ++i) {
       if (v_weights_(i, j) == 0) {
         v_(i, j) = temp_v_(i, j);
@@ -427,7 +425,7 @@ void FluidSim::constrain_velocity() {
 }
 
 void FluidSim::compute_phi() {
-  tbb::parallel_for(0, static_cast<int>(nj_), [&](int j) {
+  parallel_for(0, static_cast<int>(nj_), [&](int j) {
     for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
       // Estimate from particles
@@ -679,14 +677,14 @@ scalar fraction_inside(scalar phi_left, scalar phi_right) {
           distances
 */
 void FluidSim::compute_weights() {
-  tbb::parallel_for(0, u_weights_.nj, [this](int j) {
+  parallel_for(0, u_weights_.nj, [this](int j) {
     for (int i = 0; i < u_weights_.ni; ++i) {
       u_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i, j + 1), nodal_solid_phi_(i, j));
       u_weights_(i, j) = clamp(u_weights_(i, j), 0.0f, 1.0f);
     }
   });
 
-  tbb::parallel_for(0, v_weights_.nj, [this](int j) {
+  parallel_for(0, v_weights_.nj, [this](int j) {
     for (int i = 0; i < v_weights_.ni; ++i) {
       v_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i + 1, j), nodal_solid_phi_(i, j));
       v_weights_(i, j) = clamp(v_weights_(i, j), 0.0f, 1.0f);
@@ -710,7 +708,7 @@ void FluidSim::solve_pressure(scalar dt) {
   matrix_.zero();
 
   // Build the linear system for pressure
-  tbb::parallel_for(1, nj_ - 1, [&](int j) {
+  parallel_for(1, nj_ - 1, [&](int j) {
     for (int i = 1; i < ni_ - 1; ++i) {
       int index = i + ni_ * j;
       rhs_[index] = 0;
@@ -781,7 +779,7 @@ void FluidSim::solve_pressure(scalar dt) {
   }
 
   // Apply the velocity update
-  tbb::parallel_for(0, u_.nj, [&](int j) {
+  parallel_for(0, u_.nj, [&](int j) {
     for (int i = 1; i < u_.ni - 1; ++i) {
       int index = i + j * ni_;
       if (u_weights_(i, j) > 0) {
@@ -801,7 +799,7 @@ void FluidSim::solve_pressure(scalar dt) {
     }
   });
 
-  tbb::parallel_for(0, v_.ni, [&](int i) {
+  parallel_for(0, v_.ni, [&](int i) {
     for (int j = 1; j < v_.nj - 1; ++j) {
       int index = i + j * ni_;
       if (v_weights_(i, j) > 0) {
@@ -872,7 +870,7 @@ void FluidSim::map_p2g() {
 
 void FluidSim::map_p2g_linear() {
   // u-component of velocity
-  tbb::parallel_for(0, nj_, [this](int j) {
+  parallel_for(0, nj_, [this](int j) {
     for (int i = 0; i < ni_ + 1; ++i) {
       Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
       scalar sumw = 0.0;
@@ -890,7 +888,7 @@ void FluidSim::map_p2g_linear() {
   });
 
   // v-component of velocity
-  tbb::parallel_for(0, ni_, [this](int i) {
+  parallel_for(0, ni_, [this](int i) {
     for (int j = 0; j < nj_ + 1; ++j) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
       scalar sumw = 0.0;
@@ -910,7 +908,7 @@ void FluidSim::map_p2g_linear() {
 
 void FluidSim::map_p2g_quadratic() {
   // u-component of velocity
-  tbb::parallel_for(0, nj_, [this](int j) {
+  parallel_for(0, nj_, [this](int j) {
     for (int i = 0; i < ni_ + 1; ++i) {
       Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
       scalar sumw = 0.0;
@@ -928,7 +926,7 @@ void FluidSim::map_p2g_quadratic() {
   });
 
   // v-component of velocity
-  tbb::parallel_for(0, ni_, [this](int i) {
+  parallel_for(0, ni_, [this](int i) {
     for (int j = 0; j < nj_ + 1; ++j) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
       scalar sumw = 0.0;
@@ -953,7 +951,7 @@ void FluidSim::map_p2g_quadratic() {
 void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio, const scalar lagrangian_symplecticity, const scalar affine_stretching_ratio,
                                     const scalar affine_rotational_ratio) {
   bool use_affine = affine_stretching_ratio > 0. || affine_rotational_ratio > 0.;
-  tbb::parallel_for(0, static_cast<int>(particles_.size()), [&](int i) {
+  parallel_for(0, static_cast<int>(particles_.size()), [&](int i) {
     auto& p = particles_[i];
     if (p.type_ == PT_SOLID) return;
 
@@ -1101,7 +1099,7 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
   Array2s* pgrids[] = {&grid, &old_grid};
   Array2c* pvalids[] = {&valid, &old_valid_};
 
-  tbb::parallel_for(1, grid.nj - 1, [&](int j) {
+  parallel_for(1, grid.nj - 1, [&](int j) {
     for (int i = 1; i < grid.ni - 1; ++i)
       valid(i, j) = grid_weight(i, j) > 0 && (grid_liquid_weight(i, j) < 0 || grid_liquid_weight(i + offset(0), j + offset(1)) < 0);
   });
@@ -1115,7 +1113,7 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
     Array2c* pvalid_source = pvalids[layers & 1];
     Array2c* pvalid_target = pvalids[!(layers & 1)];
 
-    tbb::parallel_for(1, grid.nj - 1, [&](int j) {
+    parallel_for(1, grid.nj - 1, [&](int j) {
       for (int i = 1; i < grid.ni - 1; ++i) {
         scalar sum = 0;
         int count = 0;

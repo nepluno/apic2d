@@ -22,6 +22,10 @@
 
 #include "math_defs.h"
 
+#ifdef USE_TBB
+#include <tbb/tbb.h>
+#endif
+
 #ifndef M_PI
 const double M_PI = 3.1415926535897932384626433832795;
 #endif
@@ -34,6 +38,17 @@ const double M_PI = 3.1415926535897932384626433832795;
 using std::max;
 using std::min;
 using std::swap;
+
+template <typename Index, typename Callable>
+inline void parallel_for(Index start, Index end, Callable c) {
+#ifdef USE_TBB
+  tbb::parallel_for(start, end, c);
+#else
+  for (Index i = start; i < end; ++i) {
+    c(i);
+  }
+#endif
+}
 
 template <class T>
 inline T sqr(const T& x) {
