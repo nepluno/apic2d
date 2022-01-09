@@ -682,11 +682,7 @@ void draw_text(const scalar point[3], const char *text, int fontsize) {
 
 void init(const char *windowtitle, int *argc, char **argv) {
   glutInit(argc, argv);
-#ifdef __APPLE__
-  glutInitWindowSize(winwidth * 2, winheight * 2);
-#else
   glutInitWindowSize(winwidth, winheight);
-#endif
   glutCreateWindow(windowtitle);
   glutReshapeFunc(gluviReshape);
   glutDisplayFunc(gluviDisplay);

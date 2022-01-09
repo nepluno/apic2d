@@ -7,7 +7,7 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
 
 # Initialize the build type (Release, Debug, etc)
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE Debug CACHE STRING
+  set (CMAKE_BUILD_TYPE Release CACHE STRING
     "Choose the type of build, options are: Debug Release."
     FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -42,12 +42,7 @@ macro (append_files files ext)
 endmacro (append_files)
 
 # Eigen3 library is required
-find_package (Eigen3 REQUIRED)
-if (EIGEN3_FOUND)
-  include_directories (${EIGEN3_INCLUDE_DIR})
-else (EIGEN3_FOUND)
-  message (SEND_ERROR "Unable to locate Eigen3")
-endif (EIGEN3_FOUND)
+include_directories (${PROJECT_SOURCE_DIR}/include/eigen)
 
 if (WIN32)
   if(NOT EXISTS ${PROJECT_SOURCE_DIR}/thirdparty/LICENSE)

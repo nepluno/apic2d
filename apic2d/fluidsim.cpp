@@ -415,8 +415,8 @@ void FluidSim::constrain_velocity() {
     }
   });
 
-  parallel_for(0, u_.nj, [this](int j) {
-    for (int i = 0; i < u_.ni; ++i) {
+  parallel_for(0, v_.nj, [this](int j) {
+    for (int i = 0; i < v_.ni; ++i) {
       if (v_weights_(i, j) == 0) {
         v_(i, j) = temp_v_(i, j);
       }
