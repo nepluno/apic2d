@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <cfloat>
+#include <chrono>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -42,10 +43,14 @@ FluidSim sim;
 // Gluvi stuff
 //-------------
 Gluvi::PanZoom2D cam(-0.1, -0.35, 1.2);
-double oldmousetime;
-Vector2s oldmouse;
 void display();
 void timer(int junk);
+
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = std::chrono::time_point<Clock>;
+
+TimePoint old_mouse_time;
+Vector2s old_mouse = Vector2s::Zero();
 
 // Boundary definition - several circles in a circular domain.
 
@@ -53,6 +58,25 @@ Vector2s c0(50, 50), c1(70, 50), c2(30, 35), c3(50, 70);
 Vector2s s0(10, 5);
 scalar rad0 = 40;
 Vector2s o0(0.0, 0.0);
+scalar brush_radius = 2.5;
+
+void MouseFunc(int button, int state, int x, int y) {
+  cam.transform_mouse(x, y, old_mouse.data());
+  old_mouse_time = Clock::now();
+}
+
+void DragFunc(int x, int y) {
+  Vector2s new_mouse;
+  cam.transform_mouse(x, y, new_mouse.data());
+  TimePoint new_mouse_time = Clock::now();
+  scalar duration = static_cast<scalar>(std::chrono::duration_cast<std::chrono::nanoseconds>(new_mouse_time - old_mouse_time).count()) * 1e-9;
+  if (duration < 0.001) return;
+  Vector2s vel = (new_mouse - old_mouse) * grid_width / duration;
+  Vector2s center = new_mouse * grid_width + sim.get_origin();
+  sim.paint_velocity(center, brush_radius, vel);
+  old_mouse = new_mouse;
+  old_mouse_time = new_mouse_time;
+}
 
 // Main testing code
 //-------------
@@ -63,17 +87,18 @@ int main(int argc, char **argv) {
   Gluvi::userDisplayFunc = display;
   glClearColor(1, 1, 1, 1);
 
-  glutTimerFunc(1000, timer, 0);
-
   // Set up the simulation
   sim.initialize(o0, grid_width, grid_resolution, grid_resolution, 1.0);
-
   sim.set_root_boundary(std::move(FluidSim::Boundary(c0, Vector2s(rad0, 0.0), FluidSim::BT_CIRCLE, true)));
-
   sim.update_boundary();
   sim.init_random_particles();
 
+  Gluvi::userMouseFunc = MouseFunc;
+  Gluvi::userDragFunc = DragFunc;
+
+  glutTimerFunc(1000, timer, 0);
   Gluvi::run();
+
   return 0;
 }
 

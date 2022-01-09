@@ -115,6 +115,10 @@ void FluidSim::update_boundary() {
     }
 }
 
+void FluidSim::paint_velocity(const Vector2s& brush_center, const scalar brush_radius, const Vector2s& vel) {
+  velocity_brush_data_.emplace_back(brush_center, vel, brush_radius);
+}
+
 void FluidSim::resample(Vector2s& p, Vector2s& u, Matrix2s& c) {
   scalar wsum = 0.0;
   Vector2s save = u;
@@ -312,11 +316,46 @@ void FluidSim::save_velocity() {
 }
 
 void FluidSim::add_force(scalar dt) {
+  // gravity
   for (int j = 0; j < nj_ + 1; ++j) {
     for (int i = 0; i < ni_; ++i) {
       v_(i, j) += -981.0 * dt;
     }
   }
+
+  // user-specified velocity
+  for (const BrushFootprint& p : velocity_brush_data_) {
+    scalar radius_in_grid = p.radius_ / dx_;
+    Vector2s center_in_grid_u = (p.center_ - origin_) / dx_ - Vector2s(0.0, 0.5);
+    Vector2i low_range_u = Vector2i(std::max(0, std::min(u_.ni - 1, static_cast<int>(floor(center_in_grid_u(0) - radius_in_grid)))),
+                                    std::max(0, std::min(u_.nj - 1, static_cast<int>(floor(center_in_grid_u(1) - radius_in_grid)))));
+    Vector2i high_range_u = Vector2i(std::max(0, std::min(u_.ni - 1, static_cast<int>(ceil(center_in_grid_u(0) + radius_in_grid)))),
+                                     std::max(0, std::min(u_.nj - 1, static_cast<int>(ceil(center_in_grid_u(1) + radius_in_grid)))));
+    for (int i = low_range_u(0); i <= high_range_u(0); ++i) {
+      for (int j = low_range_u(1); j <= high_range_u(1); ++j) {
+        Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
+        if ((pos - p.center_).norm() <= p.radius_) {
+          u_(i, j) = p.vel_(0);
+        }
+      }
+    }
+
+    Vector2s center_in_grid_v = (p.center_ - origin_) / dx_ - Vector2s(0.5, 0.0);
+    Vector2i low_range_v = Vector2i(std::max(0, std::min(v_.ni - 1, static_cast<int>(floor(center_in_grid_v(0) - radius_in_grid)))),
+                                    std::max(0, std::min(v_.nj - 1, static_cast<int>(floor(center_in_grid_v(1) - radius_in_grid)))));
+    Vector2i high_range_v = Vector2i(std::max(0, std::min(v_.ni - 1, static_cast<int>(ceil(center_in_grid_v(0) + radius_in_grid)))),
+                                     std::max(0, std::min(v_.nj - 1, static_cast<int>(ceil(center_in_grid_v(1) + radius_in_grid)))));
+    for (int i = low_range_v(0); i <= high_range_v(0); ++i) {
+      for (int j = low_range_v(1); j <= high_range_v(1); ++j) {
+        Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
+        if ((pos - p.center_).norm() <= p.radius_) {
+          v_(i, j) = p.vel_(1);
+        }
+      }
+    }
+  }
+
+  velocity_brush_data_.clear();
 }
 
 scalar FluidSim::compute_cfl() const {

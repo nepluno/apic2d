@@ -56,3 +56,12 @@ CMake-GUI:
 2. CMake should automatically find all the dependencies. If not, check the *Advanced* box and locate those missing libraries manually. On Windows, please make sure you have picked the libraries corresponding to the architecture you have selected (say, 32-bit libraries for x86, and 64-bit libraries for x64).
 3. click generate after fixing all missing variables.
 4. open the solution (for Visual Studio or Xcode) and compile the code.
+
+User Interface
+-----------------
+Press *<LMB>* and drag directly on the simulated region to paint velocities.
+
+Press *<shift>* with mouse buttons to move the camera. 
+1. Pan: *<shift>+<LMB>*
+2. Zoom-in (drag to mark the region): *<shift>+<MMB>*
+3. Zoom-out: *<shift>+<RMB>*

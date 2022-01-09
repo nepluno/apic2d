@@ -98,7 +98,7 @@ class FluidSim {
   };
 
   struct Boundary {
-    Boundary(const Vector2s& center_, const Vector2s& parameter_, BOUNDARY_TYPE type_, bool inside);
+    Boundary(const Vector2s& center, const Vector2s& parameter, BOUNDARY_TYPE type, bool inside);
 
     Boundary(Boundary* op0_, Boundary* op1_, BOUNDARY_TYPE type_);
 
@@ -110,6 +110,14 @@ class FluidSim {
 
     BOUNDARY_TYPE type_;
     scalar sign_;
+  };
+
+  struct BrushFootprint {
+    BrushFootprint(const Vector2s& center, const Vector2s& vel, scalar radius) : center_(center), vel_(vel), radius_(radius) {}
+
+    Vector2s center_;
+    Vector2s vel_;
+    scalar radius_;
   };
 
   void initialize(const Vector2s& origin, scalar width, int ni, int nj, scalar rho, bool draw_grid = true, bool draw_particles = true,
@@ -159,6 +167,9 @@ class FluidSim {
   void resample(Vector2s& p, Vector2s& u, Matrix2s& c);
   void set_root_boundary(const Boundary& b) { root_boundary_ = std::make_unique<Boundary>(b); }
   const std::vector<Particle>& get_particles() const { return particles_; }
+
+  void paint_velocity(const Vector2s& brush_center, const scalar brush_radius, const Vector2s& vel);
+  const Vector2s& get_origin() const { return origin_; }
 
  protected:
   inline scalar circle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const { return ((position - centre).norm() - radius); }
@@ -270,6 +281,8 @@ class FluidSim {
   bool print_timing_;
 
   TimePoint last_time_point_;
+
+  std::vector<BrushFootprint> velocity_brush_data_;
 };
 
 #endif  // APIC2D_FLUIDSIM_H_

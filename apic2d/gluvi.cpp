@@ -441,7 +441,7 @@ static enum { NOBODY, CAMERA, WIDGETS, USER } mouse_owner = NOBODY;
 static void gluviMouse(int button, int state, int x, int y) {
   if (state == GLUT_DOWN) {
     int mods = glutGetModifiers();
-    if (camera && mods == 0) {
+    if (camera && mods == GLUT_ACTIVE_SHIFT) {
       camera->click(button, state, x, y);
       mouse_owner = CAMERA;
     } else if (button == GLUT_LEFT_BUTTON && root.click(state, x, winheight - y)) {
