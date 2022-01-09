@@ -47,21 +47,21 @@ Compilation
 To compile APIC2D, you'll need CMake or CMake-GUI (https://cmake.org).
 
 CMake:
-1. make a directory, say, *build*, with *mkdir build*, enter the *build* directory, type *cmake ..* (or *cmake -G Xcode ..* to generate Xcode project files on Mac; for Windows please use *cmake -G <generator> ..* to use the specific generators, or simply type *cmake -G* to list all the available generators)
-2. Optionally you can adjust the options with *ccmake .*
-3. type *make* to compile the code. For speeding up the compilation process you may use *make -j*.
+1. make a directory, say, `build`, with `mkdir build`, enter the `build` directory, type `cmake ..` (or `cmake -G Xcode ..` to generate Xcode project files on Mac; for Windows please use `cmake -G <generator> ..` to use the specific generators, or simply type `cmake -G` to list all the available generators)
+2. Optionally you can adjust the options with `ccmake .`
+3. type `make` to compile the code. For speeding up the compilation process you may use `make -j`.
 
 CMake-GUI:
-1. open CMake-GUI, enter the correct directory for source code and build. Then click *Configure*, choose the generator (for Windows, select the installed version of the Microsoft Visual Studio).
-2. CMake should automatically find all the dependencies. If not, check the *Advanced* box and locate those missing libraries manually. On Windows, please make sure you have picked the libraries corresponding to the architecture you have selected (say, 32-bit libraries for x86, and 64-bit libraries for x64).
+1. open CMake-GUI, enter the correct directory for source code and build. Then click `Configure`, choose the generator (for Windows, select the installed version of the Microsoft Visual Studio).
+2. CMake should automatically find all the dependencies. If not, check the `Advanced` box and locate those missing libraries manually. On Windows, please make sure you have picked the libraries corresponding to the architecture you have selected (say, 32-bit libraries for x86, and 64-bit libraries for x64).
 3. click generate after fixing all missing variables.
 4. open the solution (for Visual Studio or Xcode) and compile the code.
 
 User Interface
 -----------------
-Press *<LMB>* and drag directly on the simulated region to paint velocities.
+Press `<LMB>` and drag directly on the simulated region to paint velocities.
 
-Press *<shift>* with mouse buttons to move the camera. 
-1. Pan: *<shift>+<LMB>*
-2. Zoom-in (drag to mark the region): *<shift>+<MMB>*
-3. Zoom-out: *<shift>+<RMB>*
+Press `<shift>` with mouse buttons to move the camera. 
+1. Pan: `<shift>+<LMB>`
+2. Zoom-in (drag to mark the region): `<shift>+<MMB>`
+3. Zoom-out: `<shift>+<RMB>`
