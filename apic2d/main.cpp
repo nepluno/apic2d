@@ -42,7 +42,7 @@ FluidSim sim;
 
 // Gluvi stuff
 //-------------
-Gluvi::PanZoom2D cam(-0.1, -0.35, 1.2);
+Gluvi::PanZoom2D cam(0.0, 0.0, 1.2);
 void display();
 void timer(int junk);
 

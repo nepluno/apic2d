@@ -704,7 +704,7 @@ void (*userDragFunc)(int x, int y) = 0;
 void (*userKeyFunc)(unsigned char key, int x, int y) = 0;
 Camera *camera = 0;
 WidgetList root(0);
-int winwidth = 1920, winheight = 1080;
+int winwidth = 1536, winheight = 1152;
 
 //=================================================================================
 

@@ -1,7 +1,7 @@
 Affine Particle in Cell in 2D
 ================
-![Screenshot](http://www.cs.columbia.edu/cg/raymond/apic2d.jpg)
-APIC2D is an educational project to illustrate the affine-particle-in-cell algorithm in 2D, for water simulation.
+![Screenshot](https://yunfei.work/apic2d/apic2d_pad.jpg)
+APIC2D is an educational project to illustrate the affine-particle-in-cell algorithm in 2D, for water simulation. The code can be compiled and run on Windows, Mac OS X (either Intel or Apple Silicon), Linux, and [webpage](http://yunfei.work/apic2d/) (through [WASM, or WebAssembly](https://webassembly.org/)). It is well-optimized. For the default setting, the simulation runs in real-time on an iPad mini 6.
 
 The papers implemented here include:
 
@@ -35,21 +35,22 @@ VO_RK4: Runge Kutta's 4rd-order method
 
 Dependencies
 --------------------
-APIC2D depends on the Eigen libraries (included), TBB for parallelization, as well as FreeGLUT for simple visualization. You may use the Homebrew (on Mac) or APT package handling utility (on Ubuntu Linux) to install these dependencies. For example, with Homebrew on Mac OS X, these external dependencies can be installed through
+APIC2D depends on the Eigen libraries (included) as well as FreeGLUT for simple visualization. You may use the Homebrew (on Mac) or APT package handling utility (on Ubuntu Linux) to install these dependencies. For example, with Homebrew on Mac OS X, these external dependencies can be installed through
 ```
-brew install tbb freeglut
+brew install freeglut
 ```
 
-For Windows, CMake should automatically grab the dependencies from its submodule.
+For Windows or WASM, CMake should automatically handle the dependencies.
 
 Compilation
 -----------------
-To compile APIC2D, you'll need CMake or CMake-GUI (https://cmake.org).
+To compile APIC2D, you'll need CMake or CMake-GUI (https://cmake.org). Additionally, for WASM please follow the document of [Emscripten SDK](https://emscripten.org/docs/getting_started/index.html).
 
 CMake:
-1. make a directory, say, `build`, with `mkdir build`, enter the `build` directory, type `cmake ..` (or `cmake -G Xcode ..` to generate Xcode project files on Mac; for Windows please use `cmake -G <generator> ..` to use the specific generators, or simply type `cmake -G` to list all the available generators)
-2. Optionally you can adjust the options with `ccmake .`
-3. type `make` to compile the code. For speeding up the compilation process you may use `make -j`.
+1. make a directory, say, `build`, with `mkdir build`
+2. enter the `build` directory. For Desktop, type `cmake ..` (or `cmake -G Xcode ..` to generate Xcode project files on Mac; for Windows please use `cmake -G <generator> ..` to use the specific generators, or simply type `cmake -G` to list all the available generators). For WASM type `emcmake cmake ..`.
+3. Optionally you can adjust the options with `ccmake .`
+4. type `make` to compile the code. For speeding up the compilation process you may use `make -j`.
 
 CMake-GUI:
 1. open CMake-GUI, enter the correct directory for source code and build. Then click `Configure`, choose the generator (for Windows, select the installed version of the Microsoft Visual Studio).
@@ -59,7 +60,7 @@ CMake-GUI:
 
 User Interface
 -----------------
-Press `<LMB>` and drag directly on the simulated region to paint velocities.
+Press `<LMB>` (or finger touch on a mobile device) and drag directly on the simulated region to paint velocities.
 
 Press `<shift>` with mouse buttons to move the camera. 
 1. Pan: `<shift>+<LMB>`
