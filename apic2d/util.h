@@ -18,8 +18,12 @@
 
 #include <algorithm>
 #include <iostream>
-#include <thread>
 #include <vector>
+
+#ifndef SINGLE_THREADED
+#include <execution>
+#include <thread>
+#endif
 
 #include "math_defs.h"
 
@@ -38,19 +42,20 @@ using std::swap;
 
 template <typename Index, typename Callable>
 inline void parallel_for(Index start, Index end, Callable c) {
-  static std::vector<std::thread> v(std::thread::hardware_concurrency());
-  v.clear();
-  Index gap = std::thread::hardware_concurrency();
-  auto func = [&](Index tid) {
+#ifndef SINGLE_THREADED
+  static std::vector<Index> v(std::thread::hardware_concurrency());
+  std::for_each(std::execution::par_unseq, v.begin(), v.end(), [&](auto& item) {
+    Index tid = &item - &*v.begin();
+    Index gap = std::thread::hardware_concurrency();
     for (Index i = start + tid; i < end; i += gap) {
       c(i);
     }
-  };
-  for (Index tid = 1; tid < gap; ++tid) {
-    v.push_back(std::thread(func, tid));
+  });
+#else
+  for (Index i = start; i < end; ++i) {
+    c(i);
   }
-  func(0);
-  std::for_each(v.begin(), v.end(), [](std::thread& x) { x.join(); });
+#endif
 }
 
 template <class T>
