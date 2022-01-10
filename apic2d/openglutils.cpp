@@ -21,8 +21,6 @@
 #include <GL/glut.h>  // ...when everyone else puts it here?
 #endif
 
-#include <cfloat>
-
 #include "math_defs.h"
 
 void draw_circle2d(const Vector2s& centre, scalar rad, int segs) {
@@ -203,8 +201,8 @@ void hueToRGB(scalar hue, scalar sat, scalar val, scalar& r, scalar& g, scalar& 
 }
 
 void draw_grid_data2d(Array2s& data, Vector2s origin, scalar dx, bool color) {
-  scalar max_val = FLT_MIN;
-  scalar min_val = FLT_MAX;
+  scalar max_val = -1e+37f;
+  scalar min_val = 1e+37f;
   for (int j = 0; j < data.nj; ++j)
     for (int i = 0; i < data.ni; ++i) {
       max_val = std::max(data(i, j), max_val);
