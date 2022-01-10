@@ -6,7 +6,7 @@ append_files (Sources "c" .)
 
 option(SINGLE_THREADED "simulate with single thread only" OFF)
 
-if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+(-[a-zA-Z0-9.])?$")
+if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s LEGACY_GL_EMULATION=1 -s GL_FFP_ONLY=1")
   set(CMAKE_EXECUTABLE_SUFFIX ".html")
   set(SINGLE_THREADED ON CACHE BOOL "" FORCE)
