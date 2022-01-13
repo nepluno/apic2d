@@ -14,12 +14,6 @@
 #  FREEGLUT_LIBRARIES    - List of libraries when using FreeGLUT.
 #  FREEGLUT_FOUND        - True if FreeGLUT found.
 
-# Look for the library.
-FIND_PATH(FREEGLUT_INCLUDE_DIR NAMES GL/freeglut.h
-    PATHS
-    /opt/homebrew/include
-    /usr/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/include)
 
 if (WIN32)
 	FIND_LIBRARY(FREEGLUT_LIBRARY NAMES freeglut
@@ -31,6 +25,22 @@ else ()
 		/opt/homebrew/lib
 		/usr/lib)
 endif ()
+
+# Look for the library.
+if (WIN32)
+	FIND_PATH(FREEGLUT_INCLUDE_DIR NAMES GL/freeglut.h
+	    PATHS
+	    ${CMAKE_SOURCE_DIR}/thirdparty/include)
+elseif(APPLE)
+	FIND_PATH(FREEGLUT_INCLUDE_DIR NAMES glut.h
+	    PATHS
+	    ${FREEGLUT_LIBRARY}/Headers)
+else()
+	FIND_PATH(FREEGLUT_INCLUDE_DIR NAMES GL/glut.h
+	    PATHS
+	    /usr/include)
+endif()
+
 
 # Handle the QUIETLY and REQUIRED arguments and set FREEGLUT_FOUND to TRUE if all listed variables are TRUE.
 INCLUDE(FindPackageHandleStandardArgs)

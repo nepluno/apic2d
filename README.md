@@ -35,12 +35,9 @@ VO_RK4: Runge Kutta's 4rd-order method
 
 Dependencies
 --------------------
-APIC2D depends on the Eigen libraries (included) as well as FreeGLUT for simple visualization. You may use the Homebrew (on Mac) or APT package handling utility (on Ubuntu Linux) to install these dependencies. For example, with Homebrew on Mac OS X, these external dependencies can be installed through
-```
-brew install freeglut
-```
+APIC2D depends on the Eigen libraries (included) as well as GLUT/FreeGLUT for simple visualization. 
 
-For Windows or WASM, CMake should automatically handle the dependencies.
+For MacOS X, Windows or WASM, CMake should automatically handle the dependencies. For Ubuntu Linux, you may use the APT package handling utility to install these dependencies. 
 
 Compilation
 -----------------
