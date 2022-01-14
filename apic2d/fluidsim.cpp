@@ -1032,7 +1032,7 @@ void FluidSim::render() {
   }
 
   if (draw_particles_) {
-    glColor3d(0, 0, 1);
+    glColor3f(0, 0, 1);
     glPointSize(5);
     glBegin(GL_POINTS);
     for (unsigned int i = 0; i < particles_.size(); ++i) {
@@ -1041,7 +1041,7 @@ void FluidSim::render() {
     glEnd();
   }
   if (draw_velocities_) {
-    glColor3d(1, 0, 0);
+    glColor3f(1, 0, 0);
     scalar crit = dx_ * dx_ * 100.0f;
     glBegin(GL_LINES);
     for (int j = 0; j < nj_; ++j) {
