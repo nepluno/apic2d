@@ -423,14 +423,15 @@ void FluidSim::constrain_velocity() {
 }
 
 void FluidSim::compute_phi() {
+  const scalar min_radius = dx_ / sqrtf(2.0);
   parallel_for(0, static_cast<int>(nj_), [&](int j) {
     for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
       // Estimate from particles
-      scalar min_liquid_phi = 3 * dx_;
-      m_sorter_->getNeigboringParticles_cell(i, j, -2, 2, -2, 2, [&](const NeighborParticlesType& neighbors) {
+      scalar min_liquid_phi = dx_;
+      m_sorter_->getNeigboringParticles_cell(i, j, -1, 1, -1, 1, [&](const NeighborParticlesType& neighbors) {
         for (const Particle* p : neighbors) {
-          scalar phi_temp = (pos - p->x_).norm() - std::max(p->radii_, dx_ * sqrtf(2.0) / 2.0f);
+          scalar phi_temp = (pos - p->x_).norm() - std::max(p->radii_, min_radius);
           min_liquid_phi = std::min(min_liquid_phi, phi_temp);
         }
       });
@@ -1105,7 +1106,7 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
 
   old_valid_ = valid;
 
-  for (int layers = 0; layers < 4; ++layers) {
+  for (int layers = 0; layers < 2; ++layers) {
     Array2s* pgrid_source = pgrids[layers & 1];
     Array2s* pgrid_target = pgrids[!(layers & 1)];
 
