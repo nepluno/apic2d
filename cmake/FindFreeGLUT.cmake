@@ -15,23 +15,13 @@
 #  FREEGLUT_FOUND        - True if FreeGLUT found.
 
 
-if (WIN32)
-	FIND_LIBRARY(FREEGLUT_LIBRARY NAMES freeglut
-		PATHS
-		${CMAKE_SOURCE_DIR}/thirdparty/lib)
-else ()
-	FIND_LIBRARY(FREEGLUT_LIBRARY NAMES glut
-		PATHS
-		/opt/homebrew/lib
-		/usr/lib)
-endif ()
+FIND_LIBRARY(FREEGLUT_LIBRARY NAMES glut
+	PATHS
+	/opt/homebrew/lib
+	/usr/lib)
 
 # Look for the library.
-if (WIN32)
-	FIND_PATH(FREEGLUT_INCLUDE_DIR NAMES GL/freeglut.h
-	    PATHS
-	    ${CMAKE_SOURCE_DIR}/thirdparty/include)
-elseif(APPLE)
+if(APPLE)
 	FIND_PATH(FREEGLUT_INCLUDE_DIR NAMES glut.h
 	    PATHS
 	    ${FREEGLUT_LIBRARY}/Headers)

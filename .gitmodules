@@ -1,3 +1,0 @@
-[submodule "thirdparty"]
-	path = thirdparty
-	url = https://github.com/nepluno/thirdparty_win64_common.git

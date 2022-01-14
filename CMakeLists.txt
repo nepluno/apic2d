@@ -51,19 +51,23 @@ endmacro (append_files)
 include_directories (${PROJECT_SOURCE_DIR}/include/eigen)
 
 if (WIN32)
-  if(NOT EXISTS ${PROJECT_SOURCE_DIR}/thirdparty/LICENSE)
-    find_package(Git REQUIRED)
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive -- thirdparty
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      COMMAND_ERROR_IS_FATAL ANY)
-  endif ()
-
+  include(ExternalProject)
+  find_package(Git REQUIRED)
+  ExternalProject_Add(thirdparty_win64_common
+    GIT_REPOSITORY https://github.com/nepluno/thirdparty_win64_common.git
+    GIT_TAG main
+    PREFIX ${PROJECT_SOURCE_DIR}/thirdparty
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+  )
   add_custom_target(DllCopy ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${PROJECT_SOURCE_DIR}/thirdparty/bin/"
+      "${PROJECT_SOURCE_DIR}/thirdparty/src/thirdparty_win64_common/bin/"
       "${CMAKE_BINARY_DIR}/apic2d/$<CONFIG>/"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     VERBATIM)
+  add_dependencies (DllCopy thirdparty_win64_common)
 endif ()
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
