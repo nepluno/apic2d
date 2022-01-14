@@ -21,8 +21,12 @@
 #include <vector>
 
 #ifndef SINGLE_THREADED
+#ifdef USE_TBB
+#include <tbb/tbb.h>
+#else
 #include <execution>
 #include <thread>
+#endif
 #endif
 
 #include "math_defs.h"
@@ -43,6 +47,9 @@ using std::swap;
 template <typename Index, typename Callable>
 inline void parallel_for(Index start, Index end, Callable c) {
 #ifndef SINGLE_THREADED
+#ifdef USE_TBB
+  tbb::parallel_for(start, end, [&](Index i) { c(i); });
+#else
   static std::vector<Index> v(std::thread::hardware_concurrency());
   std::for_each(std::execution::par_unseq, v.begin(), v.end(), [&](auto& item) {
     Index tid = &item - &*v.begin();
@@ -51,6 +58,7 @@ inline void parallel_for(Index start, Index end, Callable c) {
       c(i);
     }
   });
+#endif
 #else
   for (Index i = start; i < end; ++i) {
     c(i);
