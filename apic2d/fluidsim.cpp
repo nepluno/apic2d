@@ -1035,6 +1035,7 @@ void FluidSim::render() {
   if (draw_velocities_) {
     glColor3f(1, 0, 0);
     scalar crit = dx_ * dx_ * 100.0f;
+    glBegin(GL_LINES);
     for (int j = 0; j < nj_; ++j) {
       for (int i = 0; i < ni_; ++i) {
         Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
@@ -1046,6 +1047,7 @@ void FluidSim::render() {
         }
       }
     }
+    glEnd();
   }
 
   if (draw_particles_) {
