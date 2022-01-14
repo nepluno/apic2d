@@ -69,12 +69,7 @@ endif()
 
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
 
-if(SINGLE_THREADED)
-  set_property(TARGET APIC2D PROPERTY CXX_STANDARD 14)
-elseif(NOT USE_TBB)
-  set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
-endif()
-
+set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
 if (WIN32)
   add_dependencies (APIC2D DllCopy)
   target_link_libraries (APIC2D optimized ${APIC2D_LIBRARIES_RELEASE} )
