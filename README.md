@@ -35,7 +35,7 @@ VO_RK4: Runge Kutta's 4rd-order method
 
 Dependencies
 --------------------
-APIC2D depends on the Eigen libraries (included), TBB (optional for Windows, required for Mac OS X) as well as GLUT/FreeGLUT for simple visualization. 
+APIC2D depends on the Eigen libraries (included), TBB (optional but provides the best performance), as well as GLUT/FreeGLUT for simple visualization. 
 
 For Windows or WASM, CMake should automatically handle the dependencies. For Mac OS X, TBB needs to be installed, which can be done with Homebrew. For Ubuntu Linux, you may use the APT package handling utility to install these dependencies. 
 
