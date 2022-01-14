@@ -55,7 +55,7 @@ if (WIN32)
   find_package(Git REQUIRED)
   ExternalProject_Add(thirdparty_win64_common
     GIT_REPOSITORY https://github.com/nepluno/thirdparty_win64_common.git
-    GIT_TAG main
+    GIT_TAG apic2d
     PREFIX ${PROJECT_SOURCE_DIR}/thirdparty
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
