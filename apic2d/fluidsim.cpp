@@ -1022,34 +1022,30 @@ void FluidSim::render() {
   glPushMatrix();
   glScaled(1.0 / (dx_ * ni_), 1.0 / (dx_ * ni_), 1.0 / (dx_ * ni_));
 
-  if (draw_grid_ || draw_boundaries_ || draw_velocities_) {
-    glBegin(GL_LINES);
-    if (draw_grid_) {
-      glColor3f(0.75, 0.75, 0.75);
-      glLineWidth(1);
-      draw_grid2d(origin_, dx_, ni_, nj_);
-    }
+  if (draw_grid_) {
+    glColor3f(0.75, 0.75, 0.75);
+    glLineWidth(1);
+    draw_grid2d(origin_, dx_, ni_, nj_);
+  }
 
-    if (draw_boundaries_) {
-      render_boundaries(*root_boundary_);
-    }
+  if (draw_boundaries_) {
+    render_boundaries(*root_boundary_);
+  }
 
-    if (draw_velocities_) {
-      glColor3f(1, 0, 0);
-      scalar crit = dx_ * dx_ * 100.0f;
-      for (int j = 0; j < nj_; ++j) {
-        for (int i = 0; i < ni_; ++i) {
-          Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
-          Vector2s vel = get_velocity(pos);
-          if (vel.squaredNorm() > crit) {
-            Vector2s pos_v = pos + 0.01 * vel;
-            glVertex2fv(pos.data());
-            glVertex2fv(pos_v.data());
-          }
+  if (draw_velocities_) {
+    glColor3f(1, 0, 0);
+    scalar crit = dx_ * dx_ * 100.0f;
+    for (int j = 0; j < nj_; ++j) {
+      for (int i = 0; i < ni_; ++i) {
+        Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
+        Vector2s vel = get_velocity(pos);
+        if (vel.squaredNorm() > crit) {
+          Vector2s pos_v = pos + 0.01 * vel;
+          glVertex2fv(pos.data());
+          glVertex2fv(pos_v.data());
         }
       }
     }
-    glEnd();
   }
 
   if (draw_particles_) {

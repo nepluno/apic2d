@@ -24,6 +24,7 @@
 #include "math_defs.h"
 
 void draw_circle2d(const Vector2s& centre, scalar rad, int segs) {
+  glBegin(GL_LINES);
   for (int i = 0; i <= segs; i++) {
     scalar cosine = rad * cos(i * 2 * 3.14159 / (scalar)(segs));
     scalar sine = rad * sin(i * 2 * 3.14159 / (scalar)(segs));
@@ -33,12 +34,14 @@ void draw_circle2d(const Vector2s& centre, scalar rad, int segs) {
       glVertex2fv(tmp.data());        
     }
   }
+  glEnd();
 }
 
 void draw_grid2d(const Vector2s& origin, scalar dx, int nx, int ny) {
   scalar width = nx * dx;
   scalar height = ny * dx;
 
+  glBegin(GL_LINES);
   for (int i = 0; i <= nx; i++) {
     Vector2s a(i * dx, 0);
     Vector2s b(i * dx, height);
@@ -55,6 +58,7 @@ void draw_grid2d(const Vector2s& origin, scalar dx, int nx, int ny) {
     glVertex2fv(oa.data());
     glVertex2fv(ob.data());
   }
+  glEnd();
 }
 
 void draw_box2d(const Vector2s& origin, scalar width, scalar height) {
@@ -62,6 +66,7 @@ void draw_box2d(const Vector2s& origin, scalar width, scalar height) {
   Vector2s o2 = origin + Vector2s(width, height);
   Vector2s o3 = origin + Vector2s(width, 0);
 
+  glBegin(GL_LINES);
   glVertex2fv(origin.data());
   glVertex2fv(o1.data());
   glVertex2fv(o1.data());
@@ -70,41 +75,52 @@ void draw_box2d(const Vector2s& origin, scalar width, scalar height) {
   glVertex2fv(o3.data());
   glVertex2fv(o3.data());
   glVertex2fv(origin.data());
+  glEnd();
 }
 
 void draw_segmentset2d(const std::vector<Vector2s>& vertices, const std::vector<Vector2i>& edges) {
+  glBegin(GL_LINES);
   for (unsigned int i = 0; i < edges.size(); ++i) {
     glVertex2fv(vertices[edges[i][0]].data());
     glVertex2fv(vertices[edges[i][1]].data());
   }
+  glEnd();
 }
 
 void draw_points2d(const std::vector<Vector2s>& points) {
+  glBegin(GL_POINTS);
   for (unsigned int i = 0; i < points.size(); ++i) {
     glVertex2fv(points[i].data());
   }
+  glEnd();
 }
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices) {
+  glBegin(GL_LINES);
   for (unsigned int i = 0; i <= vertices.size(); ++i) {
     glVertex2fv(vertices[i % vertices.size()].data());
     if (i > 0 && i < vertices.size()) {
       glVertex2fv(vertices[i].data());    
     }
   }
+  glEnd();
 }
 
 void draw_polygon2d(const std::vector<Vector2s>& vertices, const std::vector<int>& order) {
+  glBegin(GL_LINES);
   for (unsigned int i = 0; i <= order.size(); ++i) {
     glVertex2fv(vertices[order[i % order.size()]].data());
     if (i > 0 && i < order.size()) {
       glVertex2fv(vertices[order[i]].data());    
     }
   }
+  glEnd();
 }
 void draw_segment2d(const Vector2s& start, const Vector2s& end) {
+  glBegin(GL_LINES);
   glVertex2fv(start.data());
   glVertex2fv(end.data());
+  glEnd();
 }
 
 void draw_arrow2d(const Vector2s& start, const Vector2s& end, scalar arrow_head_len) {
@@ -122,20 +138,24 @@ void draw_arrow2d(const Vector2s& start, const Vector2s& end, scalar arrow_head_
   Vector2s tip_left = end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm + perp);
   Vector2s tip_right = end + arrow_head_len / (scalar)sqrt(2.0) * (-dir_norm - perp);
 
+  glBegin(GL_LINES);
   glVertex2fv(start.data());
   glVertex2fv(end.data());
   glVertex2fv(end.data());
   glVertex2fv(tip_left.data());
   glVertex2fv(end.data());
   glVertex2fv(tip_right.data());
+  glEnd();
 }
 
 void draw_trimesh2d(const std::vector<Vector2s>& vertices, const std::vector<Vector3i>& tris) {
+  glBegin(GL_TRIANGLES);
   for (unsigned int i = 0; i < tris.size(); ++i) {
     glVertex2fv(vertices[tris[i][0]].data());
     glVertex2fv(vertices[tris[i][1]].data());
     glVertex2fv(vertices[tris[i][2]].data());
   }
+  glEnd();
 }
 
 void hueToRGB(scalar hue, scalar sat, scalar val, scalar& r, scalar& g, scalar& b) {
