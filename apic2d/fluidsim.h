@@ -27,10 +27,8 @@
 
 class sorter;
 
-enum ParticleType { PT_LIQUID, PT_SOLID };
-
 struct Particle {
-  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, const scalar& density, ParticleType type);
+  Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, const scalar& density);
   Particle();
   Particle(const Particle&);
 
@@ -43,7 +41,6 @@ struct Particle {
   scalar radii_;
   scalar mass_;
   scalar logJ_;
-  ParticleType type_;
 };
 
 class FluidSim {

@@ -160,7 +160,6 @@ void FluidSim::relaxation(scalar dt) {
 
     Particle& p = particles_[n];
 
-    if (p.type_ != PT_LIQUID) return;
     Vector2s spring = Vector2s::Zero();
 
     int ix = std::max(0, std::min(static_cast<int>((p.x_(0) - origin_(0)) / dx_), ni_));
@@ -198,7 +197,6 @@ void FluidSim::relaxation(scalar dt) {
   parallel_for(0, np, [&](int n) {
     if (n % particle_correction_step != offset) return;
     Particle& p = particles_[n];
-    if (p.type_ != PT_LIQUID) return;
 
     p.x_ = p.buf0_;
   });
@@ -456,8 +454,6 @@ void FluidSim::add_particle(const Particle& p) { particles_.push_back(p); }
 */
 void FluidSim::particle_boundary_collision(scalar dt) {
   for (int p = 0; p < particles_.size(); ++p) {
-    if (particles_[p].type_ == PT_SOLID) continue;
-
     Vector2s pp = (particles_[p].x_ - origin_) / dx_;
 
     // Try commenting this section out to see the degree of accumulated error.
@@ -855,7 +851,7 @@ void FluidSim::init_random_particles() {
         Vector2s pt = Vector2s(x_, y) + origin_;
 
         scalar phi = compute_phi(pt);
-        if (phi > dx_ * 20.0) particles_.emplace_back(pt, Vector2s::Zero(), dx_ / sqrt(2.0), rho_, PT_LIQUID);
+        if (phi > dx_ * 20.0) particles_.emplace_back(pt, Vector2s::Zero(), dx_ / sqrt(2.0), rho_);
       }
     }
   }
@@ -953,7 +949,6 @@ void FluidSim::map_g2p_flip_general(float dt, const scalar lagrangian_ratio, con
   bool use_affine = affine_stretching_ratio > 0. || affine_rotational_ratio > 0.;
   parallel_for(0, static_cast<int>(particles_.size()), [&](int i) {
     auto& p = particles_[i];
-    if (p.type_ == PT_SOLID) return;
 
     Matrix2s C = Matrix2s::Zero();
     Vector2s next_grid_velocity = get_velocity_and_affine_matrix_with_order(p.x_, dt, velocity_order, interpolation_order, use_affine ? (&C) : nullptr);
@@ -1041,24 +1036,26 @@ void FluidSim::render() {
     glPointSize(5);
     glBegin(GL_POINTS);
     for (unsigned int i = 0; i < particles_.size(); ++i) {
-      if (particles_[i].type_ == PT_LIQUID) glVertex2fv(particles_[i].x_.data());
-    }
-    glEnd();
-
-    glColor3d(1, 0, 0);
-    glBegin(GL_POINTS);
-    for (unsigned int i = 0; i < particles_.size(); ++i) {
-      if (particles_[i].type_ == PT_SOLID) glVertex2fv(particles_[i].x_.data());
+      glVertex2fv(particles_[i].x_.data());
     }
     glEnd();
   }
   if (draw_velocities_) {
     glColor3d(1, 0, 0);
-    for (int j = 0; j < nj_; ++j)
+    scalar crit = dx_ * dx_ * 100.0f;
+    glBegin(GL_LINES);
+    for (int j = 0; j < nj_; ++j) {
       for (int i = 0; i < ni_; ++i) {
         Vector2s pos = Vector2s((i + 0.5) * dx_, (j + 0.5) * dx_) + origin_;
-        draw_arrow2d(pos, pos + 0.01 * get_velocity(pos), 0.1 * dx_);
+        Vector2s vel = get_velocity(pos);
+        if (vel.squaredNorm() > crit) {
+          Vector2s pos_v = pos + 0.01 * vel;
+          glVertex2fv(pos.data());
+          glVertex2fv(pos_v.data());
+        }
       }
+    }
+    glEnd();
   }
 
   glPopMatrix();
@@ -1069,18 +1066,18 @@ FluidSim::Boundary::Boundary(const Vector2s& center, const Vector2s& parameter, 
 
 FluidSim::Boundary::Boundary(Boundary* op0, Boundary* op1, BOUNDARY_TYPE type) : op0_(op0), op1_(op1), type_(type), sign_(op0 ? op0->sign_ : false) {}
 
-Particle::Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, const scalar& density, ParticleType type)
-    : x_(x), v_(v), radii_(radii), mass_(4.0 / 3.0 * M_PI * radii * radii * radii * density), logJ_(0), type_(type) {
+Particle::Particle(const Vector2s& x, const Vector2s& v, const scalar& radii, const scalar& density)
+    : x_(x), v_(v), radii_(radii), mass_(4.0 / 3.0 * M_PI * radii * radii * radii * density), logJ_(0) {
   c_.setZero();
   buf0_.setZero();
 }
 
-Particle::Particle() : x_(Vector2s::Zero()), v_(Vector2s::Zero()), radii_(0.0), mass_(0.0), logJ_(0.0), type_(PT_LIQUID) {
+Particle::Particle() : x_(Vector2s::Zero()), v_(Vector2s::Zero()), radii_(0.0), mass_(0.0), logJ_(0.0) {
   c_.setZero();
   buf0_.setZero();
 }
 
-Particle::Particle(const Particle& p) : x_(p.x_), v_(p.v_), radii_(p.radii_), mass_(p.mass_), logJ_(0.0), type_(p.type_) {
+Particle::Particle(const Particle& p) : x_(p.x_), v_(p.v_), radii_(p.radii_), mass_(p.mass_), logJ_(0.0) {
   c_.setZero();
   buf0_.setZero();
 }
