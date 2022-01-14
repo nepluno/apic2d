@@ -50,11 +50,14 @@ inline void parallel_for(Index start, Index end, Callable c) {
 #ifdef USE_TBB
   tbb::parallel_for(start, end, [&](Index i) { c(i); });
 #else
-  static std::vector<Index> v(std::thread::hardware_concurrency());
+  static Index num_threads = std::thread::hardware_concurrency();
+  static std::vector<Index> v(num_threads);
+  Index num_element_per_thread = (end - start + num_threads - 1) / num_threads;
   std::for_each(std::execution::par_unseq, v.begin(), v.end(), [&](auto& item) {
     Index tid = &item - &*v.begin();
-    Index gap = std::thread::hardware_concurrency();
-    for (Index i = start + tid; i < end; i += gap) {
+    for (Index b = 0; b < num_element_per_thread; ++b) {
+      Index i = tid * num_element_per_thread + b + start;
+      if (i >= end) return;
       c(i);
     }
   });
