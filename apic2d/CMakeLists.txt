@@ -28,11 +28,18 @@ else()
   else ()
     message (SEND_ERROR "Unable to locate FreeGLUT")
   endif ()
+
+  if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")    
+  endif()  
 endif()
 
 if (CMAKE_CXX_COMPILER MATCHES "/Xcode")
   set(SINGLE_THREADED ON CACHE BOOL "" FORCE)
 endif()
+
 
 if(SINGLE_THREADED)
   add_definitions(-DSINGLE_THREADED)

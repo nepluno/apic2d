@@ -1,5 +1,9 @@
-# Cmake 2.6.0 is missing a few macros that FindEigen3.cmake uses
-cmake_minimum_required (VERSION 2.6.2)
+cmake_minimum_required (VERSION 3.0.0)
+
+if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+")
+  SET (CMAKE_C_COMPILER_WORKS 1)
+  SET (CMAKE_CXX_COMPILER_WORKS 1)
+endif()
 
 project (APIC2D)
 
@@ -13,6 +17,8 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 
 add_definitions (-DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 
 # Add warnings to the compiler flags
 if (CMAKE_BUILD_TYPE MATCHES Debug)
