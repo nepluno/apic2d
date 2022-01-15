@@ -1,7 +1,7 @@
 Affine Particle in Cell in 2D
 ================
 ![Screenshot](https://yunfei.work/apic2d/apic2d_pad.jpg)
-APIC2D is an educational project to illustrate the affine-particle-in-cell algorithm in 2D, for water simulation. The code can be compiled and run on Windows, Mac OS X (either Intel or Apple Silicon), Linux, and [webpage](http://yunfei.work/apic2d/) (through [WASM, or WebAssembly](https://webassembly.org/)). It is well-optimized. For the default setting, the simulation runs in real-time on an iPad mini 6.
+APIC2D is an educational project to illustrate the affine-particle-in-cell algorithm in 2D for water simulation. The code can be compiled and run on Windows, Mac OS X (either Intel or Apple Silicon), Linux, and [webpage](https://yunfei.work/apic2d/) (through [WASM, or WebAssembly](https://webassembly.org/)). It is well-optimized. For the default setting, the simulation runs in real-time on an iPad mini 6.
 
 The papers implemented here include:
 
@@ -35,23 +35,23 @@ VO_RK4: Runge Kutta's 4rd-order method
 
 Dependencies
 --------------------
-APIC2D depends on the Eigen libraries (included), TBB (optional but provides the best performance), as well as GLUT/FreeGLUT for simple visualization. 
+APIC2D depends on the Eigen libraries (included), TBB (optional but provides the best performance), and GLUT/FreeGLUT for simple visualization. 
 
 For Windows or WASM, CMake should automatically handle the dependencies. For Mac OS X, TBB needs to be installed, which can be done with Homebrew. For Ubuntu Linux, you may use the APT package handling utility to install these dependencies. 
 
 Compilation
 -----------------
-To compile APIC2D, you'll need CMake or CMake-GUI (https://cmake.org). Additionally, for WASM please follow the document of [Emscripten SDK](https://emscripten.org/docs/getting_started/index.html).
+To compile APIC2D, you'll need CMake or CMake-GUI (https://cmake.org). Additionally, for WASM, please follow the documentation of [Emscripten SDK](https://emscripten.org/docs/getting_started/index.html).
 
 CMake:
 1. make a directory, say, `build`, with `mkdir build`
 2. enter the `build` directory. For Desktop, type `cmake ..` (or `cmake -G Xcode ..` to generate Xcode project files on Mac; for Windows please use `cmake -G <generator> ..` to use the specific generators, or simply type `cmake -G` to list all the available generators). For WASM type `emcmake cmake ..`.
 3. Optionally you can adjust the options with `ccmake .`
-4. type `make` to compile the code. For speeding up the compilation process you may use `make -j`.
+4. type `make` to compile the code. You may use `make -j` to speed up the compilation process.
 
 CMake-GUI:
-1. open CMake-GUI, enter the correct directory for source code and build. Then click `Configure`, choose the generator (for Windows, select the installed version of the Microsoft Visual Studio).
-2. CMake should automatically find all the dependencies. If not, check the `Advanced` box and locate those missing libraries manually. On Windows, please make sure you have picked the libraries corresponding to the architecture you have selected (say, 32-bit libraries for x86, and 64-bit libraries for x64).
+1. open CMake-GUI, enter the correct directory for source code, and build. Then click `Configure`, choose the generator (for Windows, select the installed version of the Microsoft Visual Studio).
+2. CMake should automatically find all the dependencies. If not, check the `Advanced` box and locate those missing libraries manually. On Windows, please make sure you have picked the libraries corresponding to the architecture you have selected (say, 32-bit libraries for x86 and 64-bit libraries for x64).
 3. click generate after fixing all missing variables.
 4. open the solution (for Visual Studio or Xcode) and compile the code.
 
