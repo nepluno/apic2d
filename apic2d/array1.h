@@ -123,17 +123,25 @@ struct Array1 {
 
   // note: default initial values are zero
   Array1(unsigned long n_) : n(0), max_n(0), data(0) {
+#ifndef NO_THROWS
     if (n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
     data = (T*)std::calloc(n_, sizeof(T));
+#ifndef NO_THROWS
     if (!data) throw std::bad_alloc();
+#endif
     n = n_;
     max_n = n_;
   }
 
   Array1(unsigned long n_, const T& value) : n(0), max_n(0), data(0) {
+#ifndef NO_THROWS
     if (n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
     data = (T*)std::calloc(n_, sizeof(T));
+#ifndef NO_THROWS
     if (!data) throw std::bad_alloc();
+#endif
     n = n_;
     max_n = n_;
     for (unsigned long i = 0; i < n; ++i) data[i] = value;
@@ -141,18 +149,26 @@ struct Array1 {
 
   Array1(unsigned long n_, const T& value, unsigned long max_n_) : n(0), max_n(0), data(0) {
     assert(n_ <= max_n_);
+#ifndef NO_THROWS
     if (max_n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
     data = (T*)std::calloc(max_n_, sizeof(T));
+#ifndef NO_THROWS
     if (!data) throw std::bad_alloc();
+#endif
     n = n_;
     max_n = max_n_;
     for (unsigned long i = 0; i < n; ++i) data[i] = value;
   }
 
   Array1(unsigned long n_, const T* data_) : n(0), max_n(0), data(0) {
+#ifndef NO_THROWS
     if (n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
     data = (T*)std::calloc(n_, sizeof(T));
+#ifndef NO_THROWS
     if (!data) throw std::bad_alloc();
+#endif
     n = n_;
     max_n = n_;
     assert(data_);
@@ -161,9 +177,13 @@ struct Array1 {
 
   Array1(unsigned long n_, const T* data_, unsigned long max_n_) : n(0), max_n(0), data(0) {
     assert(n_ <= max_n_);
+#ifndef NO_THROWS
     if (max_n_ > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
     data = (T*)std::calloc(max_n_, sizeof(T));
+#ifndef NO_THROWS
     if (!data) throw std::bad_alloc();
+#endif
     max_n = max_n_;
     n = n_;
     assert(data_);
@@ -172,7 +192,9 @@ struct Array1 {
 
   Array1(const Array1<T>& x) : n(0), max_n(0), data(0) {
     data = (T*)std::malloc(x.n * sizeof(T));
+#ifndef NO_THROWS
     if (!data) throw std::bad_alloc();
+#endif
     n = x.n;
     max_n = x.n;
     std::memcpy(data, x.data, n * sizeof(T));
@@ -204,7 +226,9 @@ struct Array1 {
   Array1<T>& operator=(const Array1<T>& x) {
     if (max_n < x.n) {
       T* new_data = (T*)std::malloc(x.n * sizeof(T));
+#ifndef NO_THROWS
       if (!new_data) throw std::bad_alloc();
+#endif
       std::free(data);
       data = new_data;
       max_n = x.n;
@@ -286,10 +310,14 @@ struct Array1 {
   void assign(unsigned long num, const T* copydata) {
     assert(num == 0 || copydata);
     if (num > max_n) {
+#ifndef NO_THROWS
       if (num > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
       std::free(data);
       data = (T*)std::malloc(num * sizeof(T));
+#ifndef NO_THROWS
       if (!data) throw std::bad_alloc();
+#endif
       max_n = num;
     }
     n = num;
@@ -364,10 +392,14 @@ struct Array1 {
 
   void fill(unsigned long num, const T& value) {
     if (num > max_n) {
+#ifndef NO_THROWS
       if (num > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
       std::free(data);
       data = (T*)std::malloc(num * sizeof(T));
+#ifndef NO_THROWS
       if (!data) throw std::bad_alloc();
+#endif
       max_n = num;
     }
     n = num;
@@ -387,7 +419,9 @@ struct Array1 {
   void grow(void) {
     unsigned long new_size = (max_n * sizeof(T) < ULONG_MAX / 2 ? 2 * max_n + 1 : ULONG_MAX / sizeof(T));
     T* new_data = (T*)std::realloc(data, new_size * sizeof(T));
+#ifndef NO_THROWS
     if (!new_data) throw std::bad_alloc();
+#endif
     data = new_data;
     max_n = new_size;
   }
@@ -420,9 +454,13 @@ struct Array1 {
   const_reverse_iterator rend(void) const { return const_reverse_iterator(begin()); }
 
   void reserve(unsigned long r) {
+#ifndef NO_THROWS
     if (r > ULONG_MAX / sizeof(T)) throw std::bad_alloc();
+#endif
     T* new_data = (T*)std::realloc(data, r * sizeof(T));
+#ifndef NO_THROWS
     if (!new_data) throw std::bad_alloc();
+#endif
     data = new_data;
     max_n = r;
   }

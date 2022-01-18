@@ -28,6 +28,11 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 if (CMAKE_BUILD_TYPE MATCHES Release)
   add_definitions (-DNDEBUG)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+  if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fno-rtti -fno-exceptions")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+    add_definitions (-DNO_THROWS)
+  endif()
 endif (CMAKE_BUILD_TYPE MATCHES Release)
 
 # Add directory with macros

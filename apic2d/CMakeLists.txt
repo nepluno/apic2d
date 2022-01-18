@@ -7,10 +7,9 @@ append_files (Sources "c" .)
 option(SINGLE_THREADED "simulate with single thread only" OFF)
 
 if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s LEGACY_GL_EMULATION=1 -s GL_FFP_ONLY=1 -flto")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s LEGACY_GL_EMULATION=1 -s GL_FFP_ONLY=1")
   set(CMAKE_EXECUTABLE_SUFFIX ".html")
   set(SINGLE_THREADED ON CACHE BOOL "" FORCE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 else()
   # Locate OpenGL
   find_package (OpenGL REQUIRED)
