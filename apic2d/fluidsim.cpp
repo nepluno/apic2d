@@ -66,7 +66,7 @@ const bool use_particle_boundary_collisions = false;
 
 scalar fraction_inside(scalar phi_left, scalar phi_right);
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, const Array2s& grid_liquid_weight, Array2c& valid_, Array2c old_valid_,
-                 const Vector2i& offset);
+                 const Vector2i& offset, int num_layers);
 
 FluidSim::~FluidSim() { delete m_sorter_; }
 
@@ -207,11 +207,9 @@ void FluidSim::relaxation(scalar dt) {
 */
 void FluidSim::advance(scalar dt) {
   // Passively advect particles_
-  TimePoint start = Clock::now();
+  tick();
   m_sorter_->sort(particles_, origin_, dx_);
-  TimePoint end = Clock::now();
-  if (print_timing_)
-    std::cout << "[sort] " << static_cast<scalar>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()) * 1e-6 << std::endl;
+  tock("sort");
 
   tick();
   map_p2g();
@@ -236,15 +234,13 @@ void FluidSim::advance(scalar dt) {
   solve_pressure(dt);
   tock("solve pressure");
 
-  tick();
-  temp_u_ = u_;
-  temp_v_ = v_;
   // Pressure projection only produces valid velocities in faces with non-zero
   // associated face area. Because the advection step may interpolate from these
   // invalid faces, we must extrapolate velocities from the fluid domain into
   // these zero-area faces.
-  extrapolate(u_, temp_u_, u_weights_, liquid_phi_, valid_, old_valid_, Vector2i(-1, 0));
-  extrapolate(v_, temp_v_, v_weights_, liquid_phi_, valid_, old_valid_, Vector2i(0, -1));
+  tick();
+  extrapolate(u_, temp_u_, u_weights_, liquid_phi_, valid_, old_valid_, Vector2i(-1, 0), 2);
+  extrapolate(v_, temp_v_, v_weights_, liquid_phi_, valid_, old_valid_, Vector2i(0, -1), 2);
   tock("extrapolate");
 
   // For extrapolated velocities, replace the normal component with
@@ -1089,7 +1085,10 @@ Particle::Particle(const Particle& p) : x_(p.x_), v_(p.v_), radii_(p.radii_), ma
          valid velocity data in all directions
 */
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, const Array2s& grid_liquid_weight, Array2c& valid, Array2c old_valid_,
-                 const Vector2i& offset) {
+                 const Vector2i& offset, int num_layers) {
+  if (!num_layers)
+      return;
+
   // Initialize the list of valid_ cells
   for (int j = 0; j < valid.nj; ++j) valid(0, j) = valid(valid.ni - 1, j) = 0;
   for (int i = 0; i < valid.ni; ++i) valid(i, 0) = valid(i, valid.nj - 1) = 0;
@@ -1103,8 +1102,9 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
   });
 
   old_valid_ = valid;
+  old_grid = grid;
 
-  for (int layers = 0; layers < 2; ++layers) {
+  for (int layers = 0; layers < num_layers; ++layers) {
     Array2s* pgrid_source = pgrids[layers & 1];
     Array2s* pgrid_target = pgrids[!(layers & 1)];
 
@@ -1144,7 +1144,9 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
       }
     });
 
-    *pgrid_source = *pgrid_target;
-    *pvalid_source = *pvalid_target;
+    if (layers != num_layers - 1) {
+      *pgrid_source = *pgrid_target;
+      *pvalid_source = *pvalid_target;
+    }
   }
 }
