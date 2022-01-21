@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0.0)
+cmake_minimum_required (VERSION 3.14.0)
 
 if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+")
   SET (CMAKE_C_COMPILER_WORKS 1)
@@ -55,24 +55,27 @@ endmacro (append_files)
 # Eigen3 library is required
 include_directories (${PROJECT_SOURCE_DIR}/include/eigen)
 
+set(THIRDPARTY_WIN64_COMMON_LIBRARIES_PATH "")
 if (WIN32)
-  include(ExternalProject)
-  find_package(Git REQUIRED)
-  ExternalProject_Add(thirdparty_win64_common
+  include(FetchContent)
+  FetchContent_Declare(
+    thirdparty
     GIT_REPOSITORY https://github.com/nepluno/thirdparty_win64_common.git
     GIT_TAG apic2d
-    PREFIX ${PROJECT_SOURCE_DIR}/thirdparty
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
   )
-  add_custom_target(DllCopy ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${PROJECT_SOURCE_DIR}/thirdparty/src/thirdparty_win64_common/bin/"
-      "${CMAKE_BINARY_DIR}/apic2d/$<CONFIG>/"
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    VERBATIM)
-  add_dependencies (DllCopy thirdparty_win64_common)
+  FetchContent_GetProperties(thirdparty)
+  if(NOT thirdparty_POPULATED)
+    FetchContent_Populate(thirdparty)
+    message("Fetching third-party libraries and headers into ${thirdparty_SOURCE_DIR}")
+    set(THIRDPARTY_WIN64_COMMON_LIBRARIES_PATH ${thirdparty_SOURCE_DIR}/lib)
+    include_directories ("${thirdparty_SOURCE_DIR}/include")
+    add_custom_target(DllCopy ALL
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${thirdparty_SOURCE_DIR}/bin/"
+        "${CMAKE_BINARY_DIR}/apic2d/$<CONFIG>/"
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      VERBATIM)
+  endif()
 endif ()
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
