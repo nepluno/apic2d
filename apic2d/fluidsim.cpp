@@ -109,7 +109,7 @@ void FluidSim::update_boundary() {
   for (int j = 0; j < nj_ + 1; ++j)
     for (int i = 0; i < ni_ + 1; ++i) {
       Vector2s pos(i * dx_, j * dx_);
-      nodal_solid_phi_(i, j) = compute_phi(pos + origin_);
+      nodal_solid_phi_(i, j) = solid_distance(pos + origin_);
     }
 }
 
@@ -221,7 +221,7 @@ void FluidSim::advance(scalar dt) {
   tock("add force");
 
   tick();
-  compute_phi();
+  compute_liquid_distance();
   tock("compute phi");
 
   // Compute finite-volume type_ face area weight for each velocity sample.
@@ -418,7 +418,7 @@ void FluidSim::constrain_velocity() {
   });
 }
 
-void FluidSim::compute_phi() {
+void FluidSim::compute_liquid_distance() {
   const scalar min_radius = dx_ / sqrtf(2.0);
   parallel_for(0, static_cast<int>(nj_), [&](int j) {
     for (int i = 0; i < ni_; ++i) {
@@ -433,7 +433,7 @@ void FluidSim::compute_phi() {
       });
 
       // "extrapolate" phi into solids if nearby
-      scalar solid_phi_val = compute_phi(pos);
+      scalar solid_phi_val = solid_distance(pos);
       liquid_phi_(i, j) = std::min(min_liquid_phi, solid_phi_val);
     }
   });
@@ -813,30 +813,30 @@ void FluidSim::solve_pressure(scalar dt) {
   });
 }
 
-scalar FluidSim::compute_phi(const Vector2s& pos, const Boundary& b) const {
+scalar FluidSim::solid_distance(const Vector2s& pos, const Boundary& b) const {
   switch (b.type_) {
     case BT_BOX:
-      return b.sign_ * box_phi(pos, b.center_, b.parameter_);
+      return b.sign_ * box_distance(pos, b.center_, b.parameter_);
     case BT_CIRCLE:
-      return b.sign_ * circle_phi(pos, b.center_, b.parameter_(0));
+      return b.sign_ * circle_distance(pos, b.center_, b.parameter_(0));
     case BT_TORUS:
-      return b.sign_ * torus_phi(pos, b.center_, b.parameter_(0), b.parameter_(1));
+      return b.sign_ * torus_distance(pos, b.center_, b.parameter_(0), b.parameter_(1));
     case BT_TRIANGLE:
-      return b.sign_ * triangle_phi(pos, b.center_, b.parameter_(0));
+      return b.sign_ * triangle_distance(pos, b.center_, b.parameter_(0));
     case BT_HEXAGON:
-      return b.sign_ * hexagon_phi(pos, b.center_, b.parameter_(0));
+      return b.sign_ * hexagon_distance(pos, b.center_, b.parameter_(0));
     case BT_CYLINDER:
-      return b.sign_ * cylinder_phi(pos, b.center_, b.parameter_(0), b.parameter_(1));
+      return b.sign_ * cylinder_distance(pos, b.center_, b.parameter_(0), b.parameter_(1));
     case BT_UNION:
-      return union_phi(compute_phi(pos, *b.op0_), compute_phi(pos, *b.op1_));
+      return union_distance(solid_distance(pos, *b.op0_), solid_distance(pos, *b.op1_));
     case BT_INTERSECTION:
-      return intersection_phi(compute_phi(pos, *b.op0_), compute_phi(pos, *b.op1_));
+      return intersection_distance(solid_distance(pos, *b.op0_), solid_distance(pos, *b.op1_));
     default:
       return 1e+20;
   }
 }
 
-scalar FluidSim::compute_phi(const Vector2s& pos) const { return compute_phi(pos, *root_boundary_); }
+scalar FluidSim::solid_distance(const Vector2s& pos) const { return solid_distance(pos, *root_boundary_); }
 
 void FluidSim::init_random_particles() {
   int num_particle = ni_ * nj_;
@@ -847,7 +847,7 @@ void FluidSim::init_random_particles() {
         scalar y = (static_cast<scalar>(j) + 0.5 + ((static_cast<scalar>(rand()) / static_cast<scalar>(RAND_MAX)) * 2.0 - 1.0)) * dx_;
         Vector2s pt = Vector2s(x_, y) + origin_;
 
-        scalar phi = compute_phi(pt);
+        scalar phi = solid_distance(pt);
         if (phi > dx_ * 20.0) particles_.emplace_back(pt, Vector2s::Zero(), dx_ / sqrt(2.0), rho_);
       }
     }
@@ -1086,8 +1086,7 @@ Particle::Particle(const Particle& p) : x_(p.x_), v_(p.v_), radii_(p.radii_), ma
 */
 void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, const Array2s& grid_liquid_weight, Array2c& valid, Array2c old_valid_,
                  const Vector2i& offset, int num_layers) {
-  if (!num_layers)
-      return;
+  if (!num_layers) return;
 
   // Initialize the list of valid_ cells
   for (int j = 0; j < valid.nj; ++j) valid(0, j) = valid(valid.ni - 1, j) = 0;

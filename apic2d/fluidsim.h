@@ -125,8 +125,8 @@ class FluidSim {
   void render();
   void render_boundaries(const Boundary& b);
   scalar compute_cfl() const;
-  scalar compute_phi(const Vector2s& pos) const;
-  scalar compute_phi(const Vector2s& pos, const Boundary& b) const;
+  scalar solid_distance(const Vector2s& pos) const;
+  scalar solid_distance(const Vector2s& pos, const Boundary& b) const;
 
   Vector2s get_velocity_and_affine_matrix_with_order(const Vector2s& position, scalar dt, FluidSim::VELOCITY_ORDER v_order,
                                                      FluidSim::INTERPOLATION_ORDER i_order, Matrix2s* affine_matrix);
@@ -169,9 +169,9 @@ class FluidSim {
   const Vector2s& get_origin() const { return origin_; }
 
  protected:
-  inline scalar circle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const { return ((position - centre).norm() - radius); }
+  inline scalar circle_distance(const Vector2s& position, const Vector2s& centre, scalar radius) const { return ((position - centre).norm() - radius); }
 
-  inline scalar box_phi(const Vector2s& position, const Vector2s& centre, const Vector2s& expand) const {
+  inline scalar box_distance(const Vector2s& position, const Vector2s& centre, const Vector2s& expand) const {
     scalar dx = fabs(position[0] - centre[0]) - expand[0];
     scalar dy = fabs(position[1] - centre[1]) - expand[1];
     scalar dax = max(dx, 0.0f);
@@ -179,33 +179,33 @@ class FluidSim {
     return min(max(dx, dy), 0.0f) + sqrt(dax * dax + day * day);
   }
 
-  inline scalar hexagon_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const {
+  inline scalar hexagon_distance(const Vector2s& position, const Vector2s& centre, scalar radius) const {
     scalar dx = fabs(position[0] - centre[0]);
     scalar dy = fabs(position[1] - centre[1]);
     return max((dx * 0.866025f + dy * 0.5f), dy) - radius;
   }
 
-  inline scalar triangle_phi(const Vector2s& position, const Vector2s& centre, scalar radius) const {
+  inline scalar triangle_distance(const Vector2s& position, const Vector2s& centre, scalar radius) const {
     scalar px = position[0] - centre[0];
     scalar py = position[1] - centre[1];
     scalar dx = fabs(px);
     return max(dx * 0.866025f + py * 0.5f, -py) - radius * 0.5f;
   }
 
-  inline scalar cylinder_phi(const Vector2s& position, const Vector2s& centre, scalar theta, scalar radius) const {
+  inline scalar cylinder_distance(const Vector2s& position, const Vector2s& centre, scalar theta, scalar radius) const {
     Vector2s nhat = Vector2s(cos(theta), sin(theta));
     Vector2s dx = position - centre;
     return sqrt(dx.transpose() * (Matrix2s::Identity() - nhat * nhat.transpose()) * dx) - radius;
   }
 
-  inline scalar union_phi(const scalar& d1, const scalar& d2) const { return min(d1, d2); }
+  inline scalar union_distance(const scalar& d1, const scalar& d2) const { return min(d1, d2); }
 
-  inline scalar intersection_phi(const scalar& d1, const scalar& d2) const { return max(d1, d2); }
+  inline scalar intersection_distance(const scalar& d1, const scalar& d2) const { return max(d1, d2); }
 
   inline scalar substraction_phi(const scalar& d1, const scalar& d2) const { return max(-d1, d2); }
 
-  inline scalar torus_phi(const Vector2s& position, const Vector2s& centre, scalar radius0, scalar radius1) const {
-    return max(-circle_phi(position, centre, radius0), circle_phi(position, centre, radius1));
+  inline scalar torus_distance(const Vector2s& position, const Vector2s& centre, scalar radius0, scalar radius1) const {
+    return max(-circle_distance(position, centre, radius0), circle_distance(position, centre, radius1));
   }
 
   inline void tick() {
@@ -226,12 +226,11 @@ class FluidSim {
   void particle_boundary_collision(scalar dt);
 
   // fluid velocity operations
-  void advect(scalar dt);
   void add_force(scalar dt);
 
   void compute_weights();
   void solve_pressure(scalar dt);
-  void compute_phi();
+  void compute_liquid_distance();
 
   void constrain_velocity();
 
