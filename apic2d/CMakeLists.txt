@@ -71,18 +71,17 @@ endif()
 
 add_executable (APIC2D ${Headers} ${Templates} ${Sources})
 
+if (USE_TBB)
+  set_property(TARGET APIC2D PROPERTY CXX_STANDARD 14)
+else ()
+  set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
+endif ()
+
 if (WIN32)
-  # cpp14 + tbb is faster on Windows
-  if (USE_TBB)
-    set_property(TARGET APIC2D PROPERTY CXX_STANDARD 14)
-  else ()
-    set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
-  endif ()
   add_dependencies (APIC2D DllCopy)
   target_link_libraries (APIC2D optimized ${APIC2D_LIBRARIES_RELEASE} )
   target_link_libraries (APIC2D debug ${APIC2D_LIBRARIES_DEBUG} )
 else()
-  set_property(TARGET APIC2D PROPERTY CXX_STANDARD 17)
   target_link_libraries (APIC2D ${APIC2D_LIBRARIES} )
 endif ()
 

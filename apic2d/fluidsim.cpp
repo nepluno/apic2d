@@ -106,46 +106,16 @@ void FluidSim::initialize(const Vector2s& origin, scalar width, int ni, int nj, 
           the solid boundary
 */
 void FluidSim::update_boundary() {
-  for (int j = 0; j < nj_ + 1; ++j)
+  parallel_for(0, nj_ + 1, [this](int j) {
     for (int i = 0; i < ni_ + 1; ++i) {
       Vector2s pos(i * dx_, j * dx_);
       nodal_solid_phi_(i, j) = solid_distance(pos + origin_);
     }
+  });
 }
 
 void FluidSim::paint_velocity(const Vector2s& brush_center, const scalar brush_radius, const Vector2s& vel) {
   velocity_brush_data_.emplace_back(brush_center, vel, brush_radius);
-}
-
-void FluidSim::resample(Vector2s& p, Vector2s& u, Matrix2s& c) {
-  scalar wsum = 0.0;
-  Vector2s save = u;
-  Matrix2s csave = c;
-  u = Vector2s::Zero();
-  c = Matrix2s::Zero();
-
-  int ix = std::max(0, std::min(ni_ - 1, static_cast<int>((p(0) - origin_(0)) / dx_)));
-  int iy = std::max(0, std::min(nj_ - 1, static_cast<int>((p(1) - origin_(1)) / dx_)));
-
-  const scalar re = dx_;
-
-  m_sorter_->getNeigboringParticles_cell(ix, iy, -1, 1, -1, 1, [&](const NeighborParticlesType& neighbors) {
-    for (const Particle* np : neighbors) {
-      Vector2s diff = np->x_ - p;
-      scalar w = np->mass_ * kernel::linear_kernel(diff, re);
-      u += w * np->v_;
-      c += w * np->c_;
-      wsum += w;
-    }
-  });
-
-  if (wsum) {
-    u /= wsum;
-    c /= wsum;
-  } else {
-    u = save;
-    c = csave;
-  }
 }
 
 void FluidSim::relaxation(scalar dt) {
@@ -368,52 +338,52 @@ void FluidSim::constrain_velocity() {
   // An exact normal would do better.
 
   // constrain u
-  parallel_for(0, u_.nj, [this](int j) {
-    for (int i = 0; i < u_.ni; ++i) {
-      if (u_weights_(i, j) == 0) {
-        // apply constraint
-        Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
-        Vector2s vel = get_velocity(pos);
-        Vector2s normal(0, 0);
-        interpolate_gradient(normal, Vector2s(i, j + 0.5), nodal_solid_phi_);
-        normal.normalize();
-        scalar perp_component = vel.dot(normal);
-        vel -= perp_component * normal;
-        temp_u_(i, j) = vel[0];
+  parallel_for(0, std::max(u_.nj, v_.nj), [this](int j) {
+    if (j < u_.nj) {
+      for (int i = 0; i < u_.ni; ++i) {
+        if (u_weights_(i, j) == 0) {
+          // apply constraint
+          Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
+          Vector2s vel = get_velocity(pos);
+          Vector2s normal(0, 0);
+          interpolate_gradient(normal, Vector2s(i, j + 0.5), nodal_solid_phi_);
+          normal.normalize();
+          scalar perp_component = vel.dot(normal);
+          temp_u_(i, j) = vel[0] - perp_component * normal[0];
+        }
+      }
+    }
+
+    if (j < v_.nj) {
+      for (int i = 0; i < v_.ni; ++i) {
+        if (v_weights_(i, j) == 0) {
+          // apply constraint
+          Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
+          Vector2s vel = get_velocity(pos);
+          Vector2s normal(0, 0);
+          interpolate_gradient(normal, Vector2s(i + 0.5, j), nodal_solid_phi_);
+          normal.normalize();
+          scalar perp_component = vel.dot(normal);
+          temp_v_(i, j) = vel[1] - perp_component * normal[1];
+        }
       }
     }
   });
 
-  parallel_for(0, u_.nj, [this](int j) {
-    for (int i = 0; i < u_.ni; ++i) {
-      if (u_weights_(i, j) == 0) {
-        u_(i, j) = temp_u_(i, j);
+  parallel_for(0, std::max(u_.nj, v_.nj), [this](int j) {
+    if (j < u_.nj) {
+      for (int i = 0; i < u_.ni; ++i) {
+        if (u_weights_(i, j) == 0) {
+          u_(i, j) = temp_u_(i, j);
+        }
       }
     }
-  });
-
-  // constrain v
-  parallel_for(0, v_.nj, [this](int j) {
-    for (int i = 0; i < v_.ni; ++i) {
-      if (v_weights_(i, j) == 0) {
-        // apply constraint
-        Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
-        Vector2s vel = get_velocity(pos);
-        Vector2s normal(0, 0);
-        interpolate_gradient(normal, Vector2s(i + 0.5, j), nodal_solid_phi_);
-        normal.normalize();
-        scalar perp_component = vel.dot(normal);
-        vel -= perp_component * normal;
-        temp_v_(i, j) = vel[1];
-      }
-    }
-  });
-
-  parallel_for(0, v_.nj, [this](int j) {
-    for (int i = 0; i < v_.ni; ++i) {
-      if (v_weights_(i, j) == 0) {
-        v_(i, j) = temp_v_(i, j);
-      }
+    if (j < v_.nj) {
+      for (int i = 0; i < v_.ni; ++i) {
+        if (v_weights_(i, j) == 0) {
+          v_(i, j) = temp_v_(i, j);
+        }
+      }    
     }
   });
 }
@@ -450,7 +420,7 @@ void FluidSim::add_particle(const Particle& p) { particles_.push_back(p); }
           back in for good measure.
 */
 void FluidSim::particle_boundary_collision(scalar dt) {
-  for (int p = 0; p < particles_.size(); ++p) {
+  parallel_for(0, static_cast<int>(particles_.size()), [&](int p) {
     Vector2s pp = (particles_[p].x_ - origin_) / dx_;
 
     // Try commenting this section out to see the degree of accumulated error.
@@ -461,7 +431,7 @@ void FluidSim::particle_boundary_collision(scalar dt) {
       normal.normalize();
       particles_[p].x_ -= phi_value * normal;
     }
-  }
+  });
 
   m_sorter_->sort(particles_, origin_, dx_);
 
@@ -670,17 +640,18 @@ scalar fraction_inside(scalar phi_left, scalar phi_right) {
           distances
 */
 void FluidSim::compute_weights() {
-  parallel_for(0, u_weights_.nj, [this](int j) {
-    for (int i = 0; i < u_weights_.ni; ++i) {
-      u_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i, j + 1), nodal_solid_phi_(i, j));
-      u_weights_(i, j) = clamp(u_weights_(i, j), 0.0f, 1.0f);
+  parallel_for(0, std::max(u_weights_.nj, v_weights_.nj), [this](int j) {
+    if (j < u_weights_.nj) {
+      for (int i = 0; i < u_weights_.ni; ++i) {
+        u_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i, j + 1), nodal_solid_phi_(i, j));
+        u_weights_(i, j) = clamp(u_weights_(i, j), 0.0f, 1.0f);
+      }
     }
-  });
-
-  parallel_for(0, v_weights_.nj, [this](int j) {
-    for (int i = 0; i < v_weights_.ni; ++i) {
-      v_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i + 1, j), nodal_solid_phi_(i, j));
-      v_weights_(i, j) = clamp(v_weights_(i, j), 0.0f, 1.0f);
+    if (j < v_weights_.nj) {
+      for (int i = 0; i < v_weights_.ni; ++i) {
+        v_weights_(i, j) = 1 - fraction_inside(nodal_solid_phi_(i + 1, j), nodal_solid_phi_(i, j));
+        v_weights_(i, j) = clamp(v_weights_(i, j), 0.0f, 1.0f);
+      }
     }
   });
 }
@@ -772,42 +743,43 @@ void FluidSim::solve_pressure(scalar dt) {
   }
 
   // Apply the velocity update
-  parallel_for(0, u_.nj, [&](int j) {
-    for (int i = 1; i < u_.ni - 1; ++i) {
-      int index = i + j * ni_;
-      if (u_weights_(i, j) > 0) {
-        if (liquid_phi_(i, j) < 0 || liquid_phi_(i - 1, j) < 0) {
-          float theta = 1;
-          if (liquid_phi_(i, j) >= 0 || liquid_phi_(i - 1, j) >= 0) theta = fraction_inside(liquid_phi_(i - 1, j), liquid_phi_(i, j));
-          if (theta < 0.01) theta = 0.01;
-          u_(i, j) -= dt * (pressure_[index] - pressure_[index - 1]) / dx_ / theta;
-          u_valid_(i, j) = 1;
+  parallel_for(0, std::max(u_.nj, v_.nj - 1), [&](int j) {
+    if (j < u_.nj) {
+      for (int i = 1; i < u_.ni - 1; ++i) {
+        int index = i + j * ni_;
+        if (u_weights_(i, j) > 0) {
+          if (liquid_phi_(i, j) < 0 || liquid_phi_(i - 1, j) < 0) {
+            float theta = 1;
+            if (liquid_phi_(i, j) >= 0 || liquid_phi_(i - 1, j) >= 0) theta = fraction_inside(liquid_phi_(i - 1, j), liquid_phi_(i, j));
+            if (theta < 0.01) theta = 0.01;
+            u_(i, j) -= dt * (pressure_[index] - pressure_[index - 1]) / dx_ / theta;
+            u_valid_(i, j) = 1;
+          } else {
+            u_valid_(i, j) = 0;
+          }
         } else {
+          u_(i, j) = 0;
           u_valid_(i, j) = 0;
         }
-      } else {
-        u_(i, j) = 0;
-        u_valid_(i, j) = 0;
-      }
+      }    
     }
-  });
-
-  parallel_for(0, v_.ni, [&](int i) {
-    for (int j = 1; j < v_.nj - 1; ++j) {
-      int index = i + j * ni_;
-      if (v_weights_(i, j) > 0) {
-        if (liquid_phi_(i, j) < 0 || liquid_phi_(i, j - 1) < 0) {
-          float theta = 1;
-          if (liquid_phi_(i, j) >= 0 || liquid_phi_(i, j - 1) >= 0) theta = fraction_inside(liquid_phi_(i, j - 1), liquid_phi_(i, j));
-          if (theta < 0.01) theta = 0.01;
-          v_(i, j) -= dt * (pressure_[index] - pressure_[index - ni_]) / dx_ / theta;
-          v_valid_(i, j) = 1;
+    if (j >= 1 && j < v_.nj - 1) {
+      for (int i = 0; i < v_.ni; ++i) {
+        int index = i + j * ni_;
+        if (v_weights_(i, j) > 0) {
+          if (liquid_phi_(i, j) < 0 || liquid_phi_(i, j - 1) < 0) {
+            float theta = 1;
+            if (liquid_phi_(i, j) >= 0 || liquid_phi_(i, j - 1) >= 0) theta = fraction_inside(liquid_phi_(i, j - 1), liquid_phi_(i, j));
+            if (theta < 0.01) theta = 0.01;
+            v_(i, j) -= dt * (pressure_[index] - pressure_[index - ni_]) / dx_ / theta;
+            v_valid_(i, j) = 1;
+          } else {
+            v_valid_(i, j) = 0;
+          }
         } else {
+          v_(i, j) = 0;
           v_valid_(i, j) = 0;
         }
-      } else {
-        v_(i, j) = 0;
-        v_valid_(i, j) = 0;
       }
     }
   });
@@ -863,26 +835,25 @@ void FluidSim::map_p2g() {
 
 void FluidSim::map_p2g_linear() {
   // u-component of velocity
-  parallel_for(0, nj_, [this](int j) {
-    for (int i = 0; i < ni_ + 1; ++i) {
-      Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
-      scalar sumw = 0.0;
-      scalar sumu = 0.0;
-      m_sorter_->getNeigboringParticles_cell(i, j, -1, 0, -1, 1, [&](const NeighborParticlesType& neighbors) {
-        for (const Particle* p : neighbors) {
-          scalar w = p->mass_ * kernel::linear_kernel(p->x_ - pos, dx_);
-          sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
-          sumw += w;
-        }
-      });
+  parallel_for(0, nj_ + 1, [this](int j) {
+    if (j < nj_) {
+      for (int i = 0; i < ni_ + 1; ++i) {
+        Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
+        scalar sumw = 0.0;
+        scalar sumu = 0.0;
+        m_sorter_->getNeigboringParticles_cell(i, j, -1, 0, -1, 1, [&](const NeighborParticlesType& neighbors) {
+          for (const Particle* p : neighbors) {
+            scalar w = p->mass_ * kernel::linear_kernel(p->x_ - pos, dx_);
+            sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
+            sumw += w;
+          }
+        });
 
-      u_(i, j) = sumw ? sumu / sumw : 0.0;
+        u_(i, j) = sumw ? sumu / sumw : 0.0;
+      }
     }
-  });
 
-  // v-component of velocity
-  parallel_for(0, ni_, [this](int i) {
-    for (int j = 0; j < nj_ + 1; ++j) {
+    for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
       scalar sumw = 0.0;
       scalar sumu = 0.0;
@@ -901,26 +872,25 @@ void FluidSim::map_p2g_linear() {
 
 void FluidSim::map_p2g_quadratic() {
   // u-component of velocity
-  parallel_for(0, nj_, [this](int j) {
-    for (int i = 0; i < ni_ + 1; ++i) {
-      Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
-      scalar sumw = 0.0;
-      scalar sumu = 0.0;
-      m_sorter_->getNeigboringParticles_cell(i, j, -2, 1, -1, 1, [&](const NeighborParticlesType& neighbors) {
-        for (const Particle* p : neighbors) {
-          scalar w = p->mass_ * kernel::quadratic_kernel(p->x_ - pos, dx_);
-          sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
-          sumw += w;
-        }
-      });
+  parallel_for(0, nj_ + 1, [this](int j) {
+    if (j < nj_) {
+      for (int i = 0; i < ni_ + 1; ++i) {
+        Vector2s pos = Vector2s(i * dx_, (j + 0.5) * dx_) + origin_;
+        scalar sumw = 0.0;
+        scalar sumu = 0.0;
+        m_sorter_->getNeigboringParticles_cell(i, j, -2, 1, -1, 1, [&](const NeighborParticlesType& neighbors) {
+          for (const Particle* p : neighbors) {
+            scalar w = p->mass_ * kernel::quadratic_kernel(p->x_ - pos, dx_);
+            sumu += w * (p->v_(0) + p->c_.col(0).dot(pos - p->x_));
+            sumw += w;
+          }
+        });
 
-      u_(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
+        u_(i, j) = sumw > 0.0 ? sumu / sumw : 0.0;
+      }
     }
-  });
 
-  // v-component of velocity
-  parallel_for(0, ni_, [this](int i) {
-    for (int j = 0; j < nj_ + 1; ++j) {
+    for (int i = 0; i < ni_; ++i) {
       Vector2s pos = Vector2s((i + 0.5) * dx_, j * dx_) + origin_;
       scalar sumw = 0.0;
       scalar sumu = 0.0;
@@ -1095,10 +1065,11 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
   Array2s* pgrids[] = {&grid, &old_grid};
   Array2c* pvalids[] = {&valid, &old_valid_};
 
-  parallel_for(1, grid.nj - 1, [&](int j) {
-    for (int i = 1; i < grid.ni - 1; ++i)
+  for (int j = 1; j < grid.nj - 1; ++j) {
+    for (int i = 1; i < grid.ni - 1; ++i) {
       valid(i, j) = grid_weight(i, j) > 0 && (grid_liquid_weight(i, j) < 0 || grid_liquid_weight(i + offset(0), j + offset(1)) < 0);
-  });
+    }
+  }
 
   old_valid_ = valid;
   old_grid = grid;
@@ -1144,8 +1115,14 @@ void extrapolate(Array2s& grid, Array2s& old_grid, const Array2s& grid_weight, c
     });
 
     if (layers != num_layers - 1) {
-      *pgrid_source = *pgrid_target;
-      *pvalid_source = *pvalid_target;
+      for (int j = 1; j < grid.nj - 1; ++j) {
+        for (int i = 1; i < grid.ni - 1; ++i) {
+          if (!(*pvalid_source)(i, j)) {
+            (*pgrid_source)(i, j) = (*pgrid_target)(i, j);
+            (*pvalid_source)(i, j) = (*pvalid_target)(i, j);
+          }
+        }
+      }
     }
   }
 }

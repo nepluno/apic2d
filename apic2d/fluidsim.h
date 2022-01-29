@@ -161,7 +161,6 @@ class FluidSim {
   void save_velocity();
 
   void relaxation(scalar dt);
-  void resample(Vector2s& p, Vector2s& u, Matrix2s& c);
   void set_root_boundary(const Boundary& b) { root_boundary_ = std::make_unique<Boundary>(b); }
   const std::vector<Particle>& get_particles() const { return particles_; }
 
