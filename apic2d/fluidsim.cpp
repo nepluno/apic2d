@@ -39,7 +39,7 @@
 // IT_APIC: affine particle-in-cell (APIC)
 // IT_AFLIP: affine fluid-implicit-particle (AFLIP)
 // IT_ASFLIP: affine separable fluid-implicit-particle (ASFLIP)
-const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_PIC;
+const FluidSim::INTEGRATOR_TYPE integration_scheme = FluidSim::IT_APIC;
 
 // Change here to try different order for velocity evaluation from grid,
 // options:
