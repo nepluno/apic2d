@@ -1,7 +1,8 @@
 Affine Particle in Cell in 2D
 ================
-![Screenshot](https://yunfei.work/apic2d/apic2d_pad.jpg)
-APIC2D is an educational project to illustrate the affine-particle-in-cell algorithm in 2D for water simulation. The code can be compiled and run on Windows, Mac OS X (either Intel or Apple Silicon), Linux, and [webpage](https://yunfei.work/apic2d/) (through [WASM, or WebAssembly](https://webassembly.org/)). It is well-optimized. For the default setting, the simulation runs in real-time on an iPad mini 6.
+![apic2d_pad](https://github.com/nepluno/apic2d/assets/5384915/e0bf3f6b-85ef-4809-9911-c786800ea79f)
+
+APIC2D is an educational project to illustrate the affine-particle-in-cell algorithm in 2D for water simulation. The code can be compiled and run on Windows, Mac OS X (either Intel or Apple Silicon), Linux, and [webpage](https://nepluno.github.io/apic2d/) (through [WASM, or WebAssembly](https://webassembly.org/)). It is well-optimized. For the default setting, the simulation runs in real-time on an iPad mini 6.
 
 The papers implemented here include:
 
